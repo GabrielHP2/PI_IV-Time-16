@@ -8,7 +8,7 @@
  */
 
 import {setGlobalOptions} from "firebase-functions";
-// import {onRequest} from "firebase-functions/https";
+import {onRequest} from "firebase-functions/v2/https";
 // import * as logger from "firebase-functions/logger";
 
 // Start writing functions
@@ -25,6 +25,9 @@ import {setGlobalOptions} from "firebase-functions";
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
 setGlobalOptions({maxInstances: 10});
+export const healthCheck = onRequest((_request, response) => {
+  response.status(200).send("StreamHub backend funcionando!");
+});
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});

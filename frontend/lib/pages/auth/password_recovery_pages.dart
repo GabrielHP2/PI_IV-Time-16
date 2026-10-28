@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../routes.dart';
-import '../../widgets/widgets.dart';
+import '../../components/util/validators.dart';
+import '../../components/widgets/app_text_field.dart';
+import '../../components/widgets/auth_scaffold.dart';
+import '../../components/widgets/primary_button.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -11,6 +14,7 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
 
   @override
@@ -22,26 +26,38 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
+
       title: 'Solicitar Redefinição',
       showBackButton: true,
       topPadding: 80,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppTextField(
-            label: 'Digite seu email',
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
-          ),
-          const SizedBox(height: 32),
-          PrimaryButton(
-            text: 'Enviar Solicitação',
-            // TODO: enviar solicitação por email.
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.resetPassword),
-          ),
-        ],
+
+      child: Form(
+        key: _formKey,
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+
+          children: [
+            AppTextField(
+              label: 'Digite seu email',
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.done,
+              validator: validateRequired,
+            ),
+          
+            const SizedBox(height: 32),
+            PrimaryButton(
+              text: 'Enviar Solicitação',
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  // TO DO: enviar solicitação por email.
+                  Navigator.pushNamed(context, AppRoutes.resetPassword);
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -55,6 +71,7 @@ class ResetPasswordPage extends StatefulWidget {
 }
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
+  final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -68,36 +85,51 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
+
       title: 'Redefinir Senha',
       showBackButton: true,
       topPadding: 80,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AppTextField(
-            label: 'Nova senha',
-            controller: _passwordController,
-            obscureText: true,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 10),
-          AppTextField(
-            label: 'Confirmar senha',
-            controller: _confirmPasswordController,
-            obscureText: true,
-            textInputAction: TextInputAction.done,
-          ),
-          const SizedBox(height: 32),
-          PrimaryButton(
-            text: 'Redefinir',
-            // TODO: redefinir a senha. Depois, volta ao login.
-            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.login,
-              (route) => false,
+
+      child: Form(
+        key: _formKey,
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+
+          children: [
+            AppTextField(
+              label: 'Nova senha',
+              controller: _passwordController,
+              obscureText: true,
+              textInputAction: TextInputAction.next,
+              validator: validatePassword,
             ),
-          ),
-        ],
+
+            const SizedBox(height: 10),
+            AppTextField(
+              label: 'Confirmar senha',
+              controller: _confirmPasswordController,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              validator: validateConfirmPassword(_passwordController),
+            ),
+
+            const SizedBox(height: 32),
+            PrimaryButton(
+              text: 'Redefinir',
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  // TO DO: redefinir a senha. Depois, volta ao login.
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.login,
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

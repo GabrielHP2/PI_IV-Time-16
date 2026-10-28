@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../routes.dart';
-import '../widgets/app_text_field.dart';
-import '../widgets/auth_scaffold.dart';
-import '../widgets/primary_button.dart';
+import '../../routes.dart';
+import '../../widgets/widgets.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});

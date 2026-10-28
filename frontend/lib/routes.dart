@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'pages/forgot_password_page.dart';
-import 'pages/login_page.dart';
-import 'pages/register_page.dart';
-import 'pages/reset_password_page.dart';
-import 'pages/splash_page.dart';
+import 'pages/auth/login_page.dart';
+import 'pages/auth/password_recovery_pages.dart';
+import 'pages/auth/register_page.dart';
+import 'pages/auth/splash_page.dart';
 
 class AppRoutes {
   static const splash = '/';

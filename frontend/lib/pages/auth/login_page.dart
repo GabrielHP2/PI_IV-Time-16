@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../routes.dart';
-import '../theme/app_theme.dart';
-import '../widgets/app_text_field.dart';
-import '../widgets/auth_scaffold.dart';
-import '../widgets/link_text.dart';
-import '../widgets/primary_button.dart';
+import '../../routes.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,19 +26,6 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return AuthScaffold(
       topPadding: 40,
-      footer: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'Não tem uma conta? ',
-            style: TextStyle(color: AppColors.onDark, fontSize: 13),
-          ),
-          LinkText(
-            text: 'Registre-se',
-            onTap: () => Navigator.pushNamed(context, AppRoutes.register),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -75,6 +59,20 @@ class _LoginPageState extends State<LoginPage> {
             text: 'Entrar',
             // TODO: autenticar e navegar para a tela principal do app.
             onPressed: () {},
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Não tem uma conta? ',
+                style: TextStyle(color: AppColors.onDark, fontSize: 13),
+              ),
+              LinkText(
+                text: 'Registre-se',
+                onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+              ),
+            ]
           ),
         ],
       ),

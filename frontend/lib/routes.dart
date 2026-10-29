@@ -4,6 +4,8 @@ import 'pages/auth/login_page.dart';
 import 'pages/auth/password_recovery_pages.dart';
 import 'pages/auth/register_page.dart';
 import 'pages/auth/splash_page.dart';
+import 'pages/content/detailed_view_page.dart';
+import 'pages/content/wishlist_page.dart';
 
 class AppRoutes {
   static const splash = '/';
@@ -11,6 +13,9 @@ class AppRoutes {
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
   static const resetPassword = '/reset-password';
+  static const detailedView = '/detailed-view';
+  static const wishlist = '/wishlist';
+  
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashPage(),
@@ -18,6 +23,8 @@ class AppRoutes {
         register: (_) => const RegisterPage(),
         forgotPassword: (_) => const ForgotPasswordPage(),
         resetPassword: (_) => const ResetPasswordPage(),
+        detailedView: (_) => const DetailedViewPage(),
+        wishlist: (_) => const WishlistPage(),
       };
 }
 

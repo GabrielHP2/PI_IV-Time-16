@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import components.JsonParser;
+import utils.InvalidJsonContentException;
+import utils.UnknownOperationException;
 
 
 public class ConnectionHandler extends Thread {
@@ -48,6 +50,8 @@ public class ConnectionHandler extends Thread {
                 this.connectedUsers.add(this.user);
             }
 
+            System.out.println("User " + this.user.getClientAddress() + " has connected");
+
         } catch (IOException err) {
 
             System.err.println("Failed to stablish IO connection: " + err.getMessage());
@@ -67,16 +71,66 @@ public class ConnectionHandler extends Thread {
             
             while (true) {
                 
-                if (!this.user.isReady()) continue;
+                if (!this.user.isReady()) return;
 
                 String json = this.user.receiveJson();
 
                 HashMap<String, String> formattedBody = JsonParser.parse(json);
+
+                switch (formattedBody.get("operation")) {
+                    
+                    case "ping" -> this.user.sendJson("{\"response\": \"pong\"}");
+
+                    case "close" -> {
+                        
+                        System.out.println("User " + this.user.getClientAddress() + " has disconnected");
+
+                        this.user.sendJson("{\"response\": \"connection closed\"}");
+
+                        this.user.shutDown();
+
+                        synchronized(this.connectedUsers) {
+
+                            this.connectedUsers.remove(this.user);
+                        }
+
+                        return;
+                    }
+                }
             }
                 
         } catch (IOException err) {
             
+            // TODO
             System.err.println("" + err.getMessage());
+
+        } catch (InvalidJsonContentException err)  {
+
+            // TODO
+            System.err.println("" + err.getMessage());
+
+            try {
+
+                this.user.sendJson(err.getMessage());
+
+            } catch(Exception e) {
+
+                System.err.println("Failed to send error: " + e.getMessage());
+            }
+            
+        } catch (UnknownOperationException err) {
+            
+            // TODO
+            System.err.println("" + err.getMessage());
+
+            try {
+
+                this.user.sendJson(err.getMessage());
+
+            } catch(Exception e) {
+
+                System.err.println("Failed to send error: " + e.getMessage());
+            }
 
         } catch (Exception err) {
             

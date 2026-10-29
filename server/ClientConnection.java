@@ -3,7 +3,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.Socket;
 
-import utils.EmptyJsonException;
+import utils.InvalidJsonContentException;
 
 public class ClientConnection {
     
@@ -32,19 +32,19 @@ public class ClientConnection {
         return this.bufferedReader.ready();
     }
 
-    public String receiveJson() throws IOException, EmptyJsonException {
+    public String receiveJson() throws IOException, InvalidJsonContentException {
 
         String jsonContent = "";
         jsonContent = this.bufferedReader.readLine();
 
-        if (jsonContent == null || jsonContent.isBlank()) throw new EmptyJsonException("JSON content is missing");
-
+        if (jsonContent == null || jsonContent.isBlank()) throw new InvalidJsonContentException("Request JSON content is missing");
+        
         return jsonContent;
     }
 
-    public void sendJson(String responseContent) throws IOException, EmptyJsonException {
+    public void sendJson(String responseContent) throws IOException, InvalidJsonContentException {
 
-        if (responseContent == null || responseContent.isBlank()) throw new EmptyJsonException("Response JSON content is missing");
+        if (responseContent == null || responseContent.isBlank()) throw new InvalidJsonContentException("Response JSON content is missing");
 
         this.bufferedWriter.write(responseContent);
         this.bufferedWriter.flush();

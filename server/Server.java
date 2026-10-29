@@ -14,7 +14,7 @@ public class Server {
 
         try {
 
-            if (args.length == 0) port = Integer.parseInt(args[0]);
+            if (args.length == 1) port = Integer.parseInt(args[0]);
 
         } catch (NumberFormatException err) {
 
@@ -28,6 +28,8 @@ public class Server {
 
             connectionAcceptor = new ConnectionAcceptor(port, connectedUsers);
             connectionAcceptor.start();
+
+            System.out.println("Server listening on port " + port);
 
         } catch (IOException err) {
 

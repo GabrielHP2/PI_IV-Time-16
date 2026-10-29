@@ -1,44 +1,35 @@
 package components;
 
 import java.util.HashMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+import utils.InvalidJsonContentException;
+import utils.UnknownOperationException;
 
 public class JsonParser {
 
-    public static HashMap<String, String> parse(String json) throws OperationMissingException {
+    public static HashMap<String, String> parse(String json) throws InvalidJsonContentException, UnknownOperationException {
 
-        HashMap<String, String> operationHash = new HashMap<String, String>(1);
-        
-        // Fazer o REGEX
-        Pattern operationRegex = Pattern.compile("");
+        Pattern operationRegex = Pattern.compile("\"(operation)\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = operationRegex.matcher(json);
+        
+        if (!matcher.find()) throw new InvalidJsonContentException("Couldn't find the operation inside the JSON");
         
         HashMap<String, String> formattedBody = null;
 
-        // Testar se o regex vai deixar a chave como 'operation'
-        switch (operationHash.get("operation")) {
+        switch (matcher.group(2)) {
 
-            case "login" -> {
+            case "login" -> formattedBody = JsonParser.parseLogin(json);
 
-                formattedBody = JsonParser.parseLogin(json);
-                break;
-            }
+            case "register" -> formattedBody = JsonParser.parseRegister(json);
 
-            case "register" -> {
-
-                formattedBody = JsonParser.parseRegister(json);
-                break;
-            }
+            case "ping", "close" -> formattedBody = new HashMap<String, String>(1);
             
-            default -> {
-
-                throw new OperationMissingException("Couldn't find the operation inside the JSON");
-                break;
-            }
+            default -> throw new UnknownOperationException("Operation provided is not supported");
         }
 
-        formattedBody.put("operation", operationHash.get("operation"));
+        formattedBody.put(matcher.group(1), matcher.group(2));
 
         return formattedBody;
     }

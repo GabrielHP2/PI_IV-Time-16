@@ -10,7 +10,6 @@ public class ClientConnection {
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
-
     
     public ClientConnection(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) throws IllegalArgumentException {
         
@@ -28,10 +27,14 @@ public class ClientConnection {
         return this.socket.getInetAddress().getCanonicalHostName();
     }
 
+    public boolean isReady() throws IOException {
+
+        return this.bufferedReader.ready();
+    }
+
     public String receiveJson() throws IOException, EmptyJsonException {
 
         String jsonContent = "";
-
         jsonContent = this.bufferedReader.readLine();
 
         if (jsonContent == null || jsonContent.isBlank()) throw new EmptyJsonException("JSON content is missing");

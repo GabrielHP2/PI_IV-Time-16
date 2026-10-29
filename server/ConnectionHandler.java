@@ -1,11 +1,15 @@
-import java.net.Socket;
-import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import components.JsonParser;
+
 
 public class ConnectionHandler extends Thread {
     
@@ -39,6 +43,10 @@ public class ConnectionHandler extends Thread {
                             
             this.user = new ClientConnection(this.socket, bufferedReader, bufferedWriter);
 
+            synchronized(this.connectedUsers) {
+                
+                this.connectedUsers.add(this.user);
+            }
 
         } catch (IOException err) {
 
@@ -57,15 +65,13 @@ public class ConnectionHandler extends Thread {
         // WIP
         try {
             
-            synchronized(this.connectedUsers) {
-                
-                this.connectedUsers.add(this.user);
-            }
-            
-            
             while (true) {
                 
-                this.user.sendJson(getName());
+                if (!this.user.isReady()) continue;
+
+                String json = this.user.receiveJson();
+
+                HashMap<String, String> formattedBody = JsonParser.parse(json);
             }
                 
         } catch (IOException err) {

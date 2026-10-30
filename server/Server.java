@@ -61,7 +61,7 @@ public class Server {
                     break;
                 }
                 
-                System.out.println("\nInvalid commmand");
+                System.out.println("\nInvalid command");
             } 
 
             for (ClientConnection client : Server.connectedUsers) {

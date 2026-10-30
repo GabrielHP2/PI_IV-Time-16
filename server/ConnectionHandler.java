@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import components.JsonBuillder;
+import components.JsonKeys;
 import components.JsonParser;
 import utils.InvalidJsonContentException;
 import utils.UnknownOperationException;
@@ -34,7 +36,6 @@ public class ConnectionHandler extends Thread {
         BufferedReader bufferedReader = null;
         BufferedWriter bufferedWriter = null;
 
-        // WIP
         try {
 
             bufferedWriter = new BufferedWriter(
@@ -58,8 +59,7 @@ public class ConnectionHandler extends Thread {
 
         } catch (IllegalArgumentException err) {
 
-            // TODO
-            System.err.println("" + err.getMessage());
+            System.err.println("Failed to create client: " + err.getMessage());
 
         } catch (Exception err) {
 
@@ -70,7 +70,7 @@ public class ConnectionHandler extends Thread {
         try {
             
             while (true) {
-                
+
                 if (!this.user.isReady()) return;
 
                 String json = this.user.receiveJson();
@@ -79,13 +79,13 @@ public class ConnectionHandler extends Thread {
 
                 switch (formattedBody.get("operation")) {
                     
-                    case "ping" -> this.user.sendJson("{\"response\": \"pong\"}");
+                    case "ping" -> this.user.sendJson("pong");
 
                     case "close" -> {
                         
                         System.out.println("User " + this.user.getClientAddress() + " has disconnected");
 
-                        this.user.sendJson("{\"response\": \"connection closed\"}");
+                        this.user.sendJson("connection closed");
 
                         this.user.shutDown();
 
@@ -101,15 +101,13 @@ public class ConnectionHandler extends Thread {
                 
         } catch (IOException err) {
             
-            // TODO
-            System.err.println("" + err.getMessage());
+            System.err.println(err.getMessage());
 
         } catch (InvalidJsonContentException err)  {
 
-            // TODO
-            System.err.println("" + err.getMessage());
+            System.err.println(err.getMessage());
 
-            try {
+            try {   
 
                 this.user.sendJson(err.getMessage());
 
@@ -120,8 +118,7 @@ public class ConnectionHandler extends Thread {
             
         } catch (UnknownOperationException err) {
             
-            // TODO
-            System.err.println("" + err.getMessage());
+            System.err.println("Failed to read the JSON: " + err.getMessage());
 
             try {
 

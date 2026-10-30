@@ -26,7 +26,7 @@ public class ConnectionAcceptor extends Thread {
                 ConnectionHandler connectionHandler = new ConnectionHandler(socket, this.connectedUsers);
                 connectionHandler.start();
             }
-
+            
         } catch (IOException err) {
 
             System.err.println("Failed to stablish connection: " + err.getMessage());

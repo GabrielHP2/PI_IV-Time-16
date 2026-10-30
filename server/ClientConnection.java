@@ -3,6 +3,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.Socket;
 
+import components.JsonBuillder;
 import utils.InvalidJsonContentException;
 
 public class ClientConnection {
@@ -46,7 +47,9 @@ public class ClientConnection {
 
         if (responseContent == null || responseContent.isBlank()) throw new InvalidJsonContentException("Response JSON content is missing");
 
-        this.bufferedWriter.write(responseContent);
+        String json = JsonBuillder.buildJson(responseContent);
+
+        this.bufferedWriter.write(json);
         this.bufferedWriter.flush();
     }
 

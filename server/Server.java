@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server {
 
@@ -40,24 +41,43 @@ public class Server {
             System.err.println("Something went wrong: " + err.getStackTrace());
         }
 
-        /* 
-        WIP
         
+        Scanner scanner = new Scanner(System.in);
+        String command = "";
+        
+        // WIP
         while (true) {
+            
+            while (true) {
+                
+                System.out.println("\nType EXIT to shutdown the server");
+                System.out.print("> ");
+                command = scanner.nextLine();
+                
+                if (command.toUpperCase().equals("EXIT")) {
 
+                    System.out.println("\nInitiating server shutdown...");
+                    scanner.close();
+                    break;
+                }
+                
+                System.out.println("\nInvalid commmand");
+            } 
 
             for (ClientConnection client : Server.connectedUsers) {
 
                 try {
 
                     client.shutDown();
-
+                    
                 } catch (IOException err) {
-
+                    
                     System.err.println("Failed to close client's " + client.getClientAddress() + " connection: " + err.getMessage());
                 }
             }
+
+            System.out.println("\nServer closed");
+            System.exit(0);
         } 
-        */
     }
 }

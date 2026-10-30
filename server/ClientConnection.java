@@ -1,8 +1,10 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
+import components.JsonBuillder;
 import utils.InvalidJsonContentException;
 
 public class ClientConnection {
@@ -32,12 +34,14 @@ public class ClientConnection {
         return this.bufferedReader.ready();
     }
 
-    public String receiveJson() throws IOException, InvalidJsonContentException {
+    public String receiveJson() throws IOException, EOFException, InvalidJsonContentException  {
 
         String jsonContent = "";
         jsonContent = this.bufferedReader.readLine();
 
-        if (jsonContent == null || jsonContent.isBlank()) throw new InvalidJsonContentException("Request JSON content is missing");
+        if (jsonContent == null) throw new EOFException("Client disconnected");
+
+        if (jsonContent.isBlank()) throw new InvalidJsonContentException("Request JSON content is missing");
         
         return jsonContent;
     }

@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -22,7 +23,7 @@ public class ConnectionHandler extends Thread {
     public ConnectionHandler(Socket socket, ArrayList<ClientConnection> connectedUsers) throws IllegalArgumentException { 
 
         if (socket == null) throw new IllegalArgumentException("Connection is missing");
-        if (connectedUsers == null) throw new IllegalArgumentException("Connected users is missing");
+        if (connectedUsers == null) throw new IllegalArgumentException("User list is missing");
 
         this.socket = socket;
         this.connectedUsers = connectedUsers;
@@ -38,6 +39,13 @@ public class ConnectionHandler extends Thread {
 
             bufferedWriter = new BufferedWriter(
                 new OutputStreamWriter(this.socket.getOutputStream(), StandardCharsets.UTF_8));
+
+        } catch (IOException err) {
+            
+            System.err.println("Failed to establish IO connection: " + err.getMessage());
+        }
+
+        try {
             
             bufferedReader = new BufferedReader(
                 new InputStreamReader(this.socket.getInputStream(), StandardCharsets.UTF_8));
@@ -52,8 +60,17 @@ public class ConnectionHandler extends Thread {
             System.out.println("User " + this.user.getClientAddress() + " has connected");
 
         } catch (IOException err) {
+            
+            System.err.println("Failed to establish IO connection: " + err.getMessage());
 
-            System.err.println("Failed to stablish IO connection: " + err.getMessage());
+            try {
+
+                bufferedWriter.close();
+
+            } catch (IOException e) {
+
+                System.err.println("Failed to close IO connection: " + e.getMessage());
+            }
 
         } catch (IllegalArgumentException err) {
 
@@ -61,15 +78,14 @@ public class ConnectionHandler extends Thread {
 
         } catch (Exception err) {
 
-            System.err.println("Something went wrong: " + err.getStackTrace());
+            System.err.println("Something went wrong:\n");
+            err.printStackTrace();
         }
         
         // WIP
         try {
             
             while (true) {
-
-                if (!this.user.isReady()) return;
 
                 String json = this.user.receiveJson();
 
@@ -81,7 +97,7 @@ public class ConnectionHandler extends Thread {
 
                     case "close" -> {
                         
-                        System.out.println("User " + this.user.getClientAddress() + " has disconnected");
+                        
 
                         this.user.sendJson("connection closed");
 
@@ -97,9 +113,9 @@ public class ConnectionHandler extends Thread {
                 }
             }
                 
-        } catch (IOException err) {
+        } catch (EOFException err) {
             
-            System.err.println(err.getMessage());
+            System.err.println("Failed to read the JSON: " + err.getMessage());
 
         } catch (InvalidJsonContentException err)  {
 
@@ -111,9 +127,13 @@ public class ConnectionHandler extends Thread {
 
             } catch(Exception e) {
 
-                System.err.println("Failed to send error: " + e.getMessage());
+                System.err.println("Failed to send error message: " + e.getMessage());
             }
             
+        } catch (IOException err)  {
+
+            System.err.println(err.getMessage());
+
         } catch (UnknownOperationException err) {
             
             System.err.println("Failed to read the JSON: " + err.getMessage());
@@ -124,12 +144,33 @@ public class ConnectionHandler extends Thread {
 
             } catch(Exception e) {
 
-                System.err.println("Failed to send error: " + e.getMessage());
+                System.err.println("Failed to send error message: " + e.getMessage());
             }
 
         } catch (Exception err) {
             
-            System.err.println("Something went wrong: " + err.getStackTrace());
+            System.err.println("Something went wrong:\n");
+            err.printStackTrace();
+
+        } finally {
+
+            String clientAddress = this.user.getClientAddress();
+
+            try {
+
+                this.user.shutDown();
+                
+            } catch (IOException e) {
+                
+                System.err.println("Failed to disconnect user " + clientAddress + ": " + e.getMessage());
+            }
+            
+            synchronized(this.connectedUsers) {
+                
+                this.connectedUsers.remove(this.user);
+            }
+            
+            System.out.println("User " + clientAddress + " has disconnected");
         }
     }
 }

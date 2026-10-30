@@ -20,6 +20,7 @@ public class Server {
         } catch (NumberFormatException err) {
 
             System.out.println("Invalid port value: " + err.getMessage());
+            System.exit(1);
         }
 
         connectedUsers = new ArrayList<ClientConnection>();
@@ -35,10 +36,12 @@ public class Server {
         } catch (IOException err) {
 
             System.err.println("Server initialization failed: " + err.getMessage());
+            System.exit(1);
 
         } catch (Exception err) {
 
-            System.err.println("Something went wrong: " + err.getStackTrace());
+            System.err.println("Something went wrong:\n");
+            err.printStackTrace();
         }
 
         
@@ -64,17 +67,21 @@ public class Server {
                 System.out.println("\nInvalid command");
             } 
 
-            for (ClientConnection client : Server.connectedUsers) {
+            synchronized(connectedUsers) {
 
-                try {
-
-                    client.shutDown();
-                    
-                } catch (IOException err) {
-                    
-                    System.err.println("Failed to close client's " + client.getClientAddress() + " connection: " + err.getMessage());
+                for (ClientConnection client : Server.connectedUsers) {
+    
+                    try {
+    
+                        client.shutDown();
+                        
+                    } catch (IOException err) {
+                        
+                        System.err.println("Failed to close client's " + client.getClientAddress() + " connection: " + err.getMessage());
+                    }
                 }
             }
+
 
             System.out.println("\nServer closed");
             System.exit(0);

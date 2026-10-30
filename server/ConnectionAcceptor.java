@@ -17,27 +17,28 @@ public class ConnectionAcceptor extends Thread {
     @Override
     public void run() {
         
-        try {
+        while (this.serverSocket.isBound() && !this.serverSocket.isClosed()) {
+
+            try {
             
-            while (this.serverSocket.isBound() && !this.serverSocket.isClosed()) {
-                
                 Socket socket = this.serverSocket.accept();
                 
                 ConnectionHandler connectionHandler = new ConnectionHandler(socket, this.connectedUsers);
                 connectionHandler.start();
+                
+            } catch (IOException err) {
+
+                System.err.println("Failed to establish connection: " + err.getMessage());
+
+            } catch (IllegalArgumentException err) {
+
+                System.err.println("Handler initialization failed: " + err.getMessage());
+
+            } catch (Exception err) {
+
+                System.err.println("Something went wrong:\n");
+                err.printStackTrace();
             }
-            
-        } catch (IOException err) {
-
-            System.err.println("Failed to stablish connection: " + err.getMessage());
-
-        } catch (IllegalArgumentException err) {
-
-            System.err.println("Handler initialization failed: " + err.getMessage());
-
-        } catch (Exception err) {
-
-            System.err.println("Something went wrong: " + err.getStackTrace());
         }
     }
 }

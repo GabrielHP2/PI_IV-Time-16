@@ -21,66 +21,74 @@ class MainPage extends StatelessWidget {
               const HomeCarousel(),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Populares'),
-              SizedBox(
-                height: 160,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    return MovieCard(
-                      hasArrow: index == 4,
-                    );
-                  },
+              Center(
+                child: SizedBox(
+                  height: 160,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 5,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return MovieCard(
+                        hasArrow: index == 4,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Pra você'),
-              SizedBox(
-                height: 160,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    return MovieCard(
-                      hasArrow: index == 4,
-                    );
-                  },
+              Center(
+                child: SizedBox(
+                  height: 160,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 5,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return MovieCard(
+                        hasArrow: index == 4,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Só na Netflix'),
-              SizedBox(
-                height: 160,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    return MovieCard(
-                      hasArrow: index == 4,
-                    );
-                  },
+              Center(
+                child: SizedBox(
+                  height: 160,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 5,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return MovieCard(
+                        hasArrow: index == 4,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
               const SectionHeader(title: 'Só no Disney+'),
-              SizedBox(
-                height: 160,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    return MovieCard(
-                      hasArrow: index == 4,
-                    );
-                  },
+              Center(
+                child: SizedBox(
+                  height: 160,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 5,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return MovieCard(
+                        hasArrow: index == 4,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

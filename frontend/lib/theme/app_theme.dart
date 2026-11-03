@@ -1,46 +1,34 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+
+class AppColors {
+  static const background = Color(0xFF804F99);
+  static const logoCircle = Color(0xFF4F1D6B);
+  static const fieldFill = Color(0xFFF5E6FF);
+  static const fieldBorder = Color(0xFF4A2060);
+  static const button = Color(0xFF2A0A3C);
+  static const onDark = Colors.white;
+}
 
 class AppTheme {
-  static ThemeData get darkTheme {
-    return ThemeData(
-      brightness: Brightness.dark,
-      primaryColor: AppColors.primaryPurple,
-      scaffoldBackgroundColor: AppColors.backgroundPurple,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryPurple,
-        secondary: AppColors.accentPurple,
-        surface: AppColors.surfacePurple,
-        background: AppColors.backgroundPurple,
-      ),
-      textTheme: const TextTheme(
-        headlineMedium: TextStyle(
-          color: AppColors.textWhite,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+  static ThemeData get theme => ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.background,
+          primary: AppColors.button,
+          surface: AppColors.background,
         ),
-        titleMedium: TextStyle(
-          color: AppColors.textWhite,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.background,
+          foregroundColor: AppColors.onDark,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: AppColors.onDark,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        bodyLarge: TextStyle(
-          color: AppColors.textWhite,
-          fontSize: 16,
-        ),
-        bodyMedium: TextStyle(
-          color: AppColors.textGrey,
-          fontSize: 14,
-        ),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.darkPurple,
-        selectedItemColor: AppColors.textWhite,
-        unselectedItemColor: AppColors.textGrey,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-      ),
-    );
-  }
+      );
 }

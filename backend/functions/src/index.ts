@@ -24,7 +24,12 @@ import {onRequest} from "firebase-functions/v2/https";
 // functions should each use functions.runWith({ maxInstances: 10 }) instead.
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
-setGlobalOptions({maxInstances: 10});
+setGlobalOptions({
+  maxInstances: 10,
+  region: "southamerica-east1",
+});
+
+
 export const healthCheck = onRequest((_request, response) => {
   response.status(200).send("StreamHub backend funcionando!");
 });
@@ -33,3 +38,5 @@ export const healthCheck = onRequest((_request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
 // });
+
+export * from "./auth";

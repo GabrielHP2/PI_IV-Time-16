@@ -9,7 +9,7 @@ export const signUp = onCall(async (request) => {
         email: userEmail, 
         password: userPassword, 
         phoneNumber: userPhoneNumber 
-    } = request.data;
+    } = request.data ?? {};
 
     if (!userName || !userEmail || !userPassword || !userPhoneNumber) {
 
@@ -17,7 +17,7 @@ export const signUp = onCall(async (request) => {
         throw new HttpsError("invalid-argument", "Todos os campos são obrigatórios");
     }
 
-    const requestContent = {name: userEmail, email: userEmail, password: userPassword, phoneNumber: userPhoneNumber};
+    const requestContent = {name: userName, email: userEmail, password: userPassword, phoneNumber: userPhoneNumber};
 
     try {
 

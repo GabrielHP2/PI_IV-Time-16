@@ -124,7 +124,7 @@ public class ConnectionHandler extends Thread {
 
             try {   
 
-                this.user.sendJson(err.getMessage());
+                this.user.sendJson(ResponseStatus.BAD_REQUEST, err.getMessage());
 
             } catch(Exception e) {
 
@@ -141,7 +141,7 @@ public class ConnectionHandler extends Thread {
 
             try {
 
-                this.user.sendJson(err.getMessage());
+                this.user.sendJson(ResponseStatus.METHOD_NOT_ALLOWED, err.getMessage());
 
             } catch(Exception e) {
 

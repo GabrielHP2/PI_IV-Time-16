@@ -11,14 +11,14 @@ public enum ResponseStatus {
 
     INTERNAL_SERVER_ERROR(500);
 
-    private final short CODE;
+    private final int CODE;
 
-    private ResponseStatus(short code) {
+    private ResponseStatus(int code) {
 
         this.CODE = code;
     }
 
-    public short getCode() {
+    public int getCode() {
 
         return this.CODE;
     }

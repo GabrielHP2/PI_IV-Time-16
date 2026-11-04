@@ -5,7 +5,7 @@ import { serverConnection } from "../../shared/serverConnection";
 
 export const signIn = onCall(async (request) => {
     
-    const {email: userEmail, password: userPassword} = request.data;
+    const {email: userEmail, password: userPassword} = request.data ?? {};
 
     if (!userEmail || !userPassword) {
 

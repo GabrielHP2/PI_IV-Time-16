@@ -1,10 +1,12 @@
 package components;
 
+import models.ResponseStatus;
+
 public class JsonBuilder {
 
-    public static String buildJson(short code, String content) {
+    public static String buildJson(ResponseStatus code, String content) {
 
-        String formattedJson = "{\"code\": "+ code +", \"message\": \"" + content + "\"}";
+        String formattedJson = "{\"code\": "+ code.getCode() +", \"message\": \"" + content + "\"}";
 
         return formattedJson;
     }

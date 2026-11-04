@@ -6,7 +6,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
-import components.JsonBuillder;
+import components.JsonBuilder;
 import models.ResponseStatus;
 import utils.InvalidJsonContentException;
 
@@ -49,7 +49,7 @@ public class ClientConnection {
         if (responseCode == null) throw new IllegalArgumentException("Response code is missing");
         if (responseContent == null || responseContent.isBlank()) throw new InvalidJsonContentException("Response JSON content is missing");
 
-        String json = JsonBuillder.buildJson(responseCode, responseContent);
+        String json = JsonBuilder.buildJson(responseCode, responseContent);
 
         this.bufferedWriter.write(json);
         this.bufferedWriter.flush();

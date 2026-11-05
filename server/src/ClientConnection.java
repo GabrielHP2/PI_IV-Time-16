@@ -1,10 +1,13 @@
+package src;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
-import components.JsonBuillder;
+import components.JsonBuilder;
+import models.ResponseStatus;
 import utils.InvalidJsonContentException;
 
 public class ClientConnection {
@@ -29,11 +32,6 @@ public class ClientConnection {
         return this.socket.getInetAddress().getCanonicalHostName();
     }
 
-    public boolean isReady() throws IOException {
-
-        return this.bufferedReader.ready();
-    }
-
     public String receiveJson() throws IOException, EOFException, InvalidJsonContentException  {
 
         String jsonContent = "";
@@ -46,11 +44,12 @@ public class ClientConnection {
         return jsonContent;
     }
 
-    public void sendJson(String responseContent) throws IOException, InvalidJsonContentException {
+    public void sendJson(ResponseStatus responseCode, String responseContent) throws IOException, InvalidJsonContentException, IllegalArgumentException {
 
+        if (responseCode == null) throw new IllegalArgumentException("Response code is missing");
         if (responseContent == null || responseContent.isBlank()) throw new InvalidJsonContentException("Response JSON content is missing");
 
-        String json = JsonBuillder.buildJson(responseContent);
+        String json = JsonBuilder.buildJson(responseCode, responseContent);
 
         this.bufferedWriter.write(json);
         this.bufferedWriter.flush();

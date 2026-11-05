@@ -1,3 +1,5 @@
+package src;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -10,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import components.JsonParser;
+import models.ResponseStatus;
 import utils.InvalidJsonContentException;
 import utils.UnknownOperationException;
 
@@ -93,13 +96,11 @@ public class ConnectionHandler extends Thread {
 
                 switch (formattedBody.get("operation")) {
                     
-                    case "ping" -> this.user.sendJson("pong");
+                    case "ping" -> this.user.sendJson(ResponseStatus.OK ,"pong");
 
                     case "close" -> {
                         
-                        
-
-                        this.user.sendJson("connection closed");
+                        this.user.sendJson(ResponseStatus.ACCEPTED ,"connection closed");
 
                         this.user.shutDown();
 
@@ -123,7 +124,7 @@ public class ConnectionHandler extends Thread {
 
             try {   
 
-                this.user.sendJson(err.getMessage());
+                this.user.sendJson(ResponseStatus.BAD_REQUEST, err.getMessage());
 
             } catch(Exception e) {
 
@@ -140,7 +141,7 @@ public class ConnectionHandler extends Thread {
 
             try {
 
-                this.user.sendJson(err.getMessage());
+                this.user.sendJson(ResponseStatus.METHOD_NOT_ALLOWED, err.getMessage());
 
             } catch(Exception e) {
 

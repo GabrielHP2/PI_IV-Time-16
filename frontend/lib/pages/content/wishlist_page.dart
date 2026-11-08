@@ -1,9 +1,9 @@
-
 import 'package:flutter/material.dart';
-
 import '../../routes.dart';
 import '../../theme/app_theme.dart';
+import '../../models/movie_model.dart';
 import 'detailed_view_page.dart';
+import '../../components/widgets/wishlist_card.dart';
 
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
@@ -16,15 +16,14 @@ class _WishlistPageState extends State<WishlistPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Conteúdos provisórios até a integração com o catálogo.
-  final List<String> _contents = List.generate(
-    9,
-    (index) => 'Conteúdo ${index + 1}',
-  );
-
-  static const _backgroundColor = Color(0xFFD77AF0);
-  static const _headerColor = Color(0xFFF7B0F5);
-  static const _cardColor = Color(0xFF873DA8);
+  // Mock data using the Movie model
+  final List<Movie> _movies = [
+    Movie(id: '1', title: 'Filme 1', synopsis: '...', releaseDate: '2023', rating: 4.5, genre: 'Ação', platforms: ['Netflix'], imageUrl: ''),
+    Movie(id: '2', title: 'Filme 2', synopsis: '...', releaseDate: '2023', rating: 4.0, genre: 'Drama', platforms: ['Netflix'], imageUrl: ''),
+    Movie(id: '3', title: 'Filme 3', synopsis: '...', releaseDate: '2023', rating: 4.9, genre: 'Comédia', platforms: ['Netflix'], imageUrl: ''),
+    Movie(id: '4', title: 'Filme 4', synopsis: '...', releaseDate: '2023', rating: 4.2, genre: 'Terror', platforms: ['Netflix'], imageUrl: ''),
+    Movie(id: '5', title: 'Filme 5', synopsis: '...', releaseDate: '2023', rating: 4.7, genre: 'Sci-Fi', platforms: ['Netflix'], imageUrl: ''),
+  ];
 
   @override
   void dispose() {
@@ -32,18 +31,19 @@ class _WishlistPageState extends State<WishlistPage> {
     super.dispose();
   }
 
-  void _openContent(String title) {
+  void _openContent(Movie movie) {
     Navigator.push(
       context,
       MaterialPageRoute<void>(
         builder: (_) => DetailedViewPage(
           content: ContentDetail(
-            title: title,
-            synopsis: 'Sinopse do conteúdo selecionado.',
-            releaseDate: 'Não informado',
-            rating: 0.0,
-            platforms: const [],
-            similarTitles: const [],
+            title: movie.title,
+            synopsis: movie.synopsis,
+            releaseDate: movie.releaseDate,
+            rating: movie.rating,
+            genre: movie.genre,
+            platforms: movie.platforms,
+            similarTitles: [],
           ),
         ),
       ),
@@ -52,21 +52,22 @@ class _WishlistPageState extends State<WishlistPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final filteredContents = _contents
+
+    final filteredMovies = _movies
         .where(
-          (title) =>
-              title.toLowerCase().contains(_searchQuery.toLowerCase()),
+          (movie) =>
+              movie.title.toLowerCase().contains(_searchQuery.toLowerCase()),
         )
         .toList();
 
     return Scaffold(
-      backgroundColor: _backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             Container(
-              color: _headerColor,
+              color: colors.surfaceContainerHighest,
               padding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 8,
@@ -149,7 +150,7 @@ class _WishlistPageState extends State<WishlistPage> {
               ),
             ),
             Expanded(
-              child: filteredContents.isEmpty
+              child: filteredMovies.isEmpty
                   ? const Center(
                       child: Text(
                         'Nenhum conteúdo encontrado.',
@@ -158,7 +159,7 @@ class _WishlistPageState extends State<WishlistPage> {
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      itemCount: filteredContents.length,
+                      itemCount: filteredMovies.length,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
@@ -167,20 +168,11 @@ class _WishlistPageState extends State<WishlistPage> {
                         childAspectRatio: 0.62,
                       ),
                       itemBuilder: (context, index) {
-                        final title = filteredContents[index];
+                        final movie = filteredMovies[index];
 
-                        return Tooltip(
-                          message: title,
-                          child: InkWell(
-                            onTap: () => _openContent(title),
-                            borderRadius: BorderRadius.circular(18),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _cardColor,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                            ),
-                          ),
+                        return WishlistCard(
+                          movie: movie,
+                          onTap: () => _openContent(movie),
                         );
                       },
                     ),
@@ -189,7 +181,7 @@ class _WishlistPageState extends State<WishlistPage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: _headerColor,
+        backgroundColor: colors.surfaceContainerHighest,
         selectedItemColor: AppColors.button,
         unselectedItemColor: AppColors.button,
         currentIndex: 0,
@@ -197,7 +189,7 @@ class _WishlistPageState extends State<WishlistPage> {
         showUnselectedLabels: false,
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          // As telas Início e Perfil ainda não foram implementadas.
+          // As telas de destino ainda não foram implementadas.
         },
         items: const [
           BottomNavigationBarItem(
@@ -210,7 +202,7 @@ class _WishlistPageState extends State<WishlistPage> {
             label: 'Minha lista',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
+            icon: Icon(Icons.home),
             label: 'Início',
           ),
           BottomNavigationBarItem(

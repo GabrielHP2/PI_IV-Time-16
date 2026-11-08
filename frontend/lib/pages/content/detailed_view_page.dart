@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_theme.dart';
+import '../../models/movie_model.dart';
+import '../../components/widgets/content_card.dart';
 
 class ContentDetail {
   const ContentDetail({
@@ -43,10 +44,40 @@ class DetailedViewPage extends StatefulWidget {
 
 class _DetailedViewPageState extends State<DetailedViewPage> {
   bool isSaved = false;
+  late ContentDetail _content;
+  bool _contentInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_contentInitialized) return;
+
+    if (widget.content != null) {
+      _content = widget.content!;
+    } else {
+      final args = ModalRoute.of(context)?.settings.arguments;
+
+      if (args is Movie) {
+        _content = ContentDetail(
+          title: args.title,
+          synopsis: args.synopsis,
+          releaseDate: args.releaseDate,
+          rating: args.rating,
+          genre: args.genre,
+          platforms: args.platforms,
+          similarTitles: const [],
+        );
+      } else {
+        _content = ContentDetail.example;
+      }
+    }
+
+    _contentInitialized = true;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final content = widget.content ?? ContentDetail.example;
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -93,62 +124,65 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(content.title, style: textTheme.titleLarge),
+                    Text(_content.title, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text('Lançamento: ${content.releaseDate}'),
+                    Text('Lançamento: ${_content.releaseDate}', style: textTheme.bodyMedium),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(Icons.star, color: AppColors.button),
                         const SizedBox(width: 4),
-                        Text('${content.rating}/5'),
+                        Text('${_content.rating}/5', style: textTheme.bodyMedium),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('Gênero: ${content.genre}'),
+                    Text('Gênero: ${_content.genre}', style: textTheme.bodyMedium),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          Text('Sinopse', style: textTheme.titleMedium),
+          Text('Sinopse', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(content.synopsis),
+          Text(_content.synopsis, style: textTheme.bodyMedium),
           const SizedBox(height: 22),
-          Text('Plataformas disponíveis', style: textTheme.titleMedium),
+          Text('Plataformas disponíveis', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: content.platforms
-                .map((platform) => Chip(label: Text(platform)))
+            children: _content.platforms
+                .map((platform) => Chip(label: Text(platform), backgroundColor: colors.secondaryContainer))
                 .toList(),
           ),
           const SizedBox(height: 22),
-          Text('Filmes e séries similares', style: textTheme.titleMedium),
+          Text('Filmes e séries similares', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           SizedBox(
             height: 88,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: content.similarTitles.length,
+              itemCount: _content.similarTitles.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) => Container(
-                width: 130,
-                padding: const EdgeInsets.all(12),
-                alignment: Alignment.bottomLeft,
-                decoration: BoxDecoration(
-                  color: colors.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  content.similarTitles[index],
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.onPrimaryContainer),
-                ),
-              ),
+              itemBuilder: (context, index) {
+                final title = _content.similarTitles[index];
+                return ContentCard(
+                  movie: Movie(
+                    id: '${DateTime.now().millisecond}',
+                    title: title,
+                    synopsis: '',
+                    releaseDate: '',
+                    rating: 0.0,
+                    genre: '',
+                    platforms: [],
+                    imageUrl: '',
+                  ),
+                  onTap: () {
+                    // Logic to navigate to a specific movie if needed
+                  },
+                );
+              },
             ),
           ),
         ],

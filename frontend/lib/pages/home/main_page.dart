@@ -1,11 +1,21 @@
+
 import 'package:flutter/material.dart';
+
 import '../../models/movie_model.dart';
 import '../../components/widgets/movie_card.dart';
 import '../../theme/app_theme.dart';
 import '../../routes.dart';
 
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  final PageController _pageController = PageController();
+  int _currentLaunch = 0;
 
   final List<Movie> lancamentos = const [
     Movie(id: '1', title: 'Filme 1', synopsis: '...', releaseDate: '2023', rating: 4.5, genre: 'Ação', platforms: ['Netflix'], imageUrl: ''),
@@ -35,13 +45,61 @@ class MainPage extends StatelessWidget {
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _showPendingMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _openMovie(Movie movie) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.detailedView,
+      arguments: movie,
+    );
+  }
+
+  void _onNavigationTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, AppRoutes.wishlist);
+        break;
+      case 1:
+        // Já estamos na página inicial.
+        break;
+      case 2:
+        _showPendingMessage('A tela de perfil ainda será implementada.');
+        break;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mainpage'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications)),
+          IconButton(
+            tooltip: 'Pesquisar',
+            onPressed: () {
+              _showPendingMessage('A pesquisa será implementada.');
+            },
+            icon: const Icon(Icons.search),
+          ),
+          IconButton(
+            tooltip: 'Notificações',
+            onPressed: () {
+              _showPendingMessage(
+                'O painel de notificações será implementado.',
+              );
+            },
+            icon: const Icon(Icons.notifications),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -52,7 +110,11 @@ class MainPage extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 'Lançamentos',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -77,11 +139,20 @@ class MainPage extends StatelessWidget {
         selectedItemColor: AppColors.button,
         unselectedItemColor: Colors.grey,
         currentIndex: 1,
-        onTap: (index) {},
+        onTap: _onNavigationTap,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), label: 'Minha lista'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bookmark_border),
+            label: 'Minha lista',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Início',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Perfil',
+          ),
         ],
       ),
     );
@@ -93,16 +164,20 @@ class MainPage extends StatelessWidget {
         SizedBox(
           height: 220,
           child: PageView.builder(
+            controller: _pageController,
             itemCount: lancamentos.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentLaunch = index;
+              });
+            },
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: MovieCard(
                   movie: lancamentos[index],
                   isLarge: true,
-                  onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.detailedView, arguments: lancamentos[index]);
-                  },
+                  onTap: () => _openMovie(lancamentos[index]),
                 ),
               );
             },
@@ -111,15 +186,20 @@ class MainPage extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(lancamentos.length, (index) => Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: index == 0 ? Colors.white : Colors.white.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
+          children: List.generate(
+            lancamentos.length,
+            (index) => Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: index == _currentLaunch
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
             ),
-          )),
+          ),
         ),
       ],
     );
@@ -130,7 +210,11 @@ class MainPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
         title,
-        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -147,9 +231,7 @@ class MainPage extends StatelessWidget {
             padding: const EdgeInsets.only(right: 16),
             child: MovieCard(
               movie: movies[index],
-              onTap: () {
-                Navigator.pushNamed(context, AppRoutes.detailedView, arguments: movies[index]);
-              },
+              onTap: () => _openMovie(movies[index]),
             ),
           );
         },

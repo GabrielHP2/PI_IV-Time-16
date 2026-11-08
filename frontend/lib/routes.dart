@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import 'pages/auth/login_page.dart';
@@ -11,7 +12,7 @@ import 'pages/settings/settings_page.dart';
 
 class AppRoutes {
   static const splash = '/';
-  static const home = '/home';
+  static const home = '/main_page';
   static const login = '/login';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
@@ -19,7 +20,6 @@ class AppRoutes {
   static const detailedView = '/detailed-view';
   static const wishlist = '/wishlist';
   static const settings = '/settings';
-  
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashPage(),

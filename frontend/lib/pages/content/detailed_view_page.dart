@@ -1,7 +1,11 @@
+
 import 'package:flutter/material.dart';
+
 import '../../theme/app_theme.dart';
 import '../../models/movie_model.dart';
 import '../../components/widgets/content_card.dart';
+import '../../repositories/wishlist_repository.dart';
+import '../../routes.dart';
 
 class ContentDetail {
   const ContentDetail({
@@ -46,6 +50,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
   bool isSaved = false;
   late ContentDetail _content;
   bool _contentInitialized = false;
+  Movie? _movie;
 
   @override
   void didChangeDependencies() {
@@ -55,10 +60,24 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
 
     if (widget.content != null) {
       _content = widget.content!;
+
+      // Compatibilidade com chamadas que enviam ContentDetail diretamente.
+      // Quando a tela recebe Movie pela rota, preservamos o ID original.
+      _movie = Movie(
+        id: 'content-${widget.content!.title}',
+        title: widget.content!.title,
+        synopsis: widget.content!.synopsis,
+        releaseDate: widget.content!.releaseDate,
+        rating: widget.content!.rating,
+        genre: widget.content!.genre,
+        platforms: widget.content!.platforms,
+        imageUrl: '',
+      );
     } else {
       final args = ModalRoute.of(context)?.settings.arguments;
 
       if (args is Movie) {
+        _movie = args;
         _content = ContentDetail(
           title: args.title,
           synopsis: args.synopsis,
@@ -73,7 +92,65 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
       }
     }
 
+    // O marcador começa de acordo com o estado real da lista compartilhada.
+    if (_movie != null) {
+      isSaved = WishlistRepository.contains(_movie!.id);
+    }
+
     _contentInitialized = true;
+  }
+
+  void _toggleWishlist() {
+    final movie = _movie;
+
+    if (movie == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível salvar este conteúdo.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      WishlistRepository.toggle(movie);
+      isSaved = WishlistRepository.contains(movie.id);
+    });
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            isSaved
+                ? 'Adicionado à sua lista!'
+                : 'Removido da sua lista!',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
+  void _onNavigationTap(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, AppRoutes.wishlist);
+        break;
+      case 1:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) => false,
+        );
+        break;
+      case 2:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('A tela de perfil ainda será implementada.'),
+          ),
+        );
+        break;
+    }
   }
 
   @override
@@ -84,7 +161,9 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Visão detalhada'),
-        leading: BackButton(onPressed: () => Navigator.maybePop(context)),
+        leading: BackButton(
+          onPressed: () => Navigator.maybePop(context),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -111,7 +190,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
                     tooltip: isSaved
                         ? 'Remover da lista de desejos'
                         : 'Adicionar à lista de desejos',
-                    onPressed: () => setState(() => isSaved = !isSaved),
+                    onPressed: _toggleWishlist,
                     icon: Icon(
                       isSaved ? Icons.bookmark : Icons.bookmark_border,
                     ),
@@ -124,40 +203,77 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_content.title, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      _content.title,
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('Lançamento: ${_content.releaseDate}', style: textTheme.bodyMedium),
+                    Text(
+                      'Lançamento: ${_content.releaseDate}',
+                      style: textTheme.bodyMedium,
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.star, color: AppColors.button),
+                        const Icon(
+                          Icons.star,
+                          color: AppColors.button,
+                        ),
                         const SizedBox(width: 4),
-                        Text('${_content.rating}/5', style: textTheme.bodyMedium),
+                        Text(
+                          '${_content.rating}/5',
+                          style: textTheme.bodyMedium,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('Gênero: ${_content.genre}', style: textTheme.bodyMedium),
+                    Text(
+                      'Gênero: ${_content.genre}',
+                      style: textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          Text('Sinopse', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Sinopse',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(_content.synopsis, style: textTheme.bodyMedium),
           const SizedBox(height: 22),
-          Text('Plataformas disponíveis', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Plataformas disponíveis',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: _content.platforms
-                .map((platform) => Chip(label: Text(platform), backgroundColor: colors.secondaryContainer))
+                .map(
+                  (platform) => Chip(
+                    label: Text(platform),
+                    backgroundColor: colors.secondaryContainer,
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 22),
-          Text('Filmes e séries similares', style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Filmes e séries similares',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 10),
           SizedBox(
             height: 88,
@@ -167,19 +283,21 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final title = _content.similarTitles[index];
+
                 return ContentCard(
                   movie: Movie(
-                    id: '${DateTime.now().millisecond}',
+                    id: 'similar-$index',
                     title: title,
                     synopsis: '',
                     releaseDate: '',
                     rating: 0.0,
                     genre: '',
-                    platforms: [],
+                    platforms: const [],
                     imageUrl: '',
                   ),
                   onTap: () {
-                    // Logic to navigate to a specific movie if needed
+                    // A navegação para o conteúdo similar
+                    // poderá ser adicionada quando houver seus dados.
                   },
                 );
               },
@@ -191,15 +309,16 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
         currentIndex: 1,
         selectedItemColor: AppColors.button,
         unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          // As telas de destino ainda não foram implementadas.
-        },
+        onTap: _onNavigationTap,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.bookmark_border),
             label: 'Minha lista',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Início',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Perfil',

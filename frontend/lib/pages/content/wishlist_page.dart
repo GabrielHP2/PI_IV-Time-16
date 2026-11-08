@@ -1,9 +1,11 @@
+
 import 'package:flutter/material.dart';
+
 import '../../routes.dart';
 import '../../theme/app_theme.dart';
 import '../../models/movie_model.dart';
-import 'detailed_view_page.dart';
 import '../../components/widgets/wishlist_card.dart';
+import '../../repositories/wishlist_repository.dart';
 
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
@@ -16,15 +18,6 @@ class _WishlistPageState extends State<WishlistPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Mock data using the Movie model
-  final List<Movie> _movies = [
-    Movie(id: '1', title: 'Filme 1', synopsis: '...', releaseDate: '2023', rating: 4.5, genre: 'Ação', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '2', title: 'Filme 2', synopsis: '...', releaseDate: '2023', rating: 4.0, genre: 'Drama', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '3', title: 'Filme 3', synopsis: '...', releaseDate: '2023', rating: 4.9, genre: 'Comédia', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '4', title: 'Filme 4', synopsis: '...', releaseDate: '2023', rating: 4.2, genre: 'Terror', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '5', title: 'Filme 5', synopsis: '...', releaseDate: '2023', rating: 4.7, genre: 'Sci-Fi', platforms: ['Netflix'], imageUrl: ''),
-  ];
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -32,22 +25,36 @@ class _WishlistPageState extends State<WishlistPage> {
   }
 
   void _openContent(Movie movie) {
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute<void>(
-        builder: (_) => DetailedViewPage(
-          content: ContentDetail(
-            title: movie.title,
-            synopsis: movie.synopsis,
-            releaseDate: movie.releaseDate,
-            rating: movie.rating,
-            genre: movie.genre,
-            platforms: movie.platforms,
-            similarTitles: [],
-          ),
-        ),
-      ),
+      AppRoutes.detailedView,
+      arguments: movie,
     );
+  }
+
+  void _onNavigationTap(int index) {
+    switch (index) {
+      case 0:
+        // Já estamos na Minha Lista.
+        break;
+
+      case 1:
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.home,
+        );
+        break;
+
+      case 2:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'A tela de perfil ainda será implementada.',
+            ),
+          ),
+        );
+        break;
+    }
   }
 
   @override
@@ -55,17 +62,11 @@ class _WishlistPageState extends State<WishlistPage> {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final filteredMovies = _movies
-        .where(
-          (movie) =>
-              movie.title.toLowerCase().contains(_searchQuery.toLowerCase()),
-        )
-        .toList();
-
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
+            // Cabeçalho
             Container(
               color: colors.surfaceContainerHighest,
               padding: const EdgeInsets.symmetric(
@@ -89,20 +90,26 @@ class _WishlistPageState extends State<WishlistPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
+
                   const SizedBox(width: 10),
+
+                  // Pesquisa
                   Expanded(
                     child: SizedBox(
                       height: 38,
                       child: TextField(
                         controller: _searchController,
                         onChanged: (value) {
-                          setState(() => _searchQuery = value);
+                          setState(() {
+                            _searchQuery = value;
+                          });
                         },
                         decoration: InputDecoration(
                           hintText: 'Buscar conteúdo',
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
+                          contentPadding:
+                              const EdgeInsets.symmetric(
                             horizontal: 12,
                           ),
                           suffixIcon: const Icon(
@@ -110,13 +117,16 @@ class _WishlistPageState extends State<WishlistPage> {
                             color: AppColors.button,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius:
+                                BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                         ),
                       ),
                     ),
                   ),
+
+                  // Notificações
                   IconButton(
                     tooltip: 'Notificações',
                     onPressed: () {
@@ -136,8 +146,15 @@ class _WishlistPageState extends State<WishlistPage> {
                 ],
               ),
             ),
+
+            // Título
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 22, 18, 12),
+              padding: const EdgeInsets.fromLTRB(
+                18,
+                22,
+                18,
+                12,
+              ),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -149,37 +166,94 @@ class _WishlistPageState extends State<WishlistPage> {
                 ),
               ),
             ),
+
+            // Conteúdos salvos
             Expanded(
-              child: filteredMovies.isEmpty
-                  ? const Center(
+              child: ValueListenableBuilder<List<Movie>>(
+                valueListenable: WishlistRepository.items,
+                builder: (context, movies, child) {
+                  final filteredMovies = movies.where((movie) {
+                    return movie.title
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase());
+                  }).toList();
+
+                  if (movies.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.bookmark_border,
+                              size: 64,
+                              color: Colors.white70,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Sua lista está vazia.',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Adicione filmes e séries que deseja assistir.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (filteredMovies.isEmpty) {
+                    return const Center(
                       child: Text(
                         'Nenhum conteúdo encontrado.',
                         style: TextStyle(color: Colors.white),
                       ),
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      itemCount: filteredMovies.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.62,
-                      ),
-                      itemBuilder: (context, index) {
-                        final movie = filteredMovies[index];
+                    );
+                  }
 
-                        return WishlistCard(
-                          movie: movie,
-                          onTap: () => _openContent(movie),
-                        );
-                      },
+                  return GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      12,
+                      0,
+                      12,
+                      12,
                     ),
+                    itemCount: filteredMovies.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.62,
+                    ),
+                    itemBuilder: (context, index) {
+                      final movie = filteredMovies[index];
+
+                      return WishlistCard(
+                        movie: movie,
+                        onTap: () => _openContent(movie),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
+
+      // Navegação inferior
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: colors.surfaceContainerHighest,
         selectedItemColor: AppColors.button,
@@ -188,16 +262,17 @@ class _WishlistPageState extends State<WishlistPage> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          // As telas de destino ainda não foram implementadas.
-        },
+        onTap: _onNavigationTap,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.bookmark_border),
             activeIcon: CircleAvatar(
               radius: 16,
               backgroundColor: Color(0xFF923DB4),
-              child: Icon(Icons.bookmark, color: Colors.white),
+              child: Icon(
+                Icons.bookmark,
+                color: Colors.white,
+              ),
             ),
             label: 'Minha lista',
           ),

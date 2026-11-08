@@ -8,6 +8,8 @@ import 'pages/auth/splash_page.dart';
 import 'pages/content/detailed_view_page.dart';
 import 'pages/content/wishlist_page.dart';
 import 'pages/home/main_page.dart';
+import 'pages/personalization/platforms_page.dart';
+import 'pages/personalization/ongoing_content_page.dart';
 import 'pages/settings/settings_page.dart';
 
 class AppRoutes {
@@ -20,6 +22,8 @@ class AppRoutes {
   static const detailedView = '/detailed-view';
   static const wishlist = '/wishlist';
   static const settings = '/settings';
+  static const platforms = '/personalization/platforms';
+  static const ongoingContent = '/personalization/ongoing-content';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashPage(),
@@ -31,6 +35,8 @@ class AppRoutes {
         detailedView: (_) => const DetailedViewPage(),
         wishlist: (_) => const WishlistPage(),
         settings: (_) => const SettingsPage(),
+        platforms: (_) => const PlatformsPage(),
+        ongoingContent: (_) => const OngoingContentPage(),
       };
 }
 

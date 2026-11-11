@@ -10,6 +10,8 @@ import 'pages/content/wishlist_page.dart';
 import 'pages/home/main_page.dart';
 import 'pages/personalization/platforms_page.dart';
 import 'pages/personalization/ongoing_content_page.dart';
+import 'pages/personalization/desired_content_page.dart';
+import 'pages/personalization/current_spend_page.dart';
 import 'pages/settings/settings_page.dart';
 
 class AppRoutes {
@@ -24,6 +26,8 @@ class AppRoutes {
   static const settings = '/settings';
   static const platforms = '/personalization/platforms';
   static const ongoingContent = '/personalization/ongoing-content';
+  static const desiredContent = '/personalization/desired-content';
+  static const currentSpend = '/personalization/current-spend';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashPage(),
@@ -37,6 +41,8 @@ class AppRoutes {
         settings: (_) => const SettingsPage(),
         platforms: (_) => const PlatformsPage(),
         ongoingContent: (_) => const OngoingContentPage(),
+        desiredContent: (_) => const DesiredContentPage(),
+        currentSpend: (_) => const CurrentSpendPage(),
       };
 }
 

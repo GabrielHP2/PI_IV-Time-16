@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../components/widgets/primary_button.dart';
 import '../../models/movie_model.dart';
 import '../../repositories/personalization_repository.dart';
+import '../../routes.dart';
 import '../../theme/app_theme.dart';
 
 class OngoingContentPage extends StatefulWidget {
@@ -148,19 +149,7 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
   }
 
   void _continue() {
-    final selectedCount = PersonalizationRepository.ongoingContents.value.length;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            selectedCount == 1
-                ? '1 conteúdo selecionado.'
-                : '$selectedCount conteúdos selecionados.',
-          ),
-        ),
-      );
+    Navigator.pushNamed(context, AppRoutes.desiredContent);
   }
 
   @override

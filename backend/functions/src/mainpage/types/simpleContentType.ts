@@ -1,6 +1,8 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 export interface SimpleContentType {
 
     id: number,
-    banner_url: string | null,
-    poster_url: string | null
+    banner_path?: string,
+    poster_path?: string
 }

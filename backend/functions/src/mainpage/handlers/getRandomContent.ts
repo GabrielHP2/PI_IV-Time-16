@@ -1,12 +1,23 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
-import { BASE_URL, BASE_IMG_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
+import { BASE_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
+import { parseSimpleContent } from "../../shared/parseSimpleContent";
+import { ResponseContentType } from "../types/responseContentType";
 
 export const getRandomContent = onCall(async (request) => {
 
+    const { pageNumber } = request.data ?? 1;
+
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
     
-    const moviesUrl = `${BASE_URL}discover/movie?include_adult=false&include_video=false&language=${LANGUAGE}&page=1&region=${REGION}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate%7Cfree%7Cads`;
-    const seriesURL = `${BASE_URL}discover/tv?include_adult=false&include_null_first_air_dates=false&language=${LANGUAGE}&page=1&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate%7Cfree%7Cads`;
+        logger.error("Error from getSpecificContent: Invalid page number");
+        throw new HttpsError("invalid-argument", "Página inválida");
+    }
+
+    const moviesUrl = `${BASE_URL}discover/movie?include_adult=false&include_video=false&language=${LANGUAGE}&page=${pageNumber}&region=${REGION}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate%7Cfree%7Cads`;
+    const seriesURL = `${BASE_URL}discover/tv?include_adult=false&include_null_first_air_dates=false&language=${LANGUAGE}&page=${pageNumber}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate%7Cfree%7Cads`;
     
     const options = {
 
@@ -15,29 +26,66 @@ export const getRandomContent = onCall(async (request) => {
             accept: "application/json",
             Authorization: `Bearer ${API_TOKEN}`
         }
-    }
+    };
 
+    const rawMoviesJson = await fetch(moviesUrl, options)
+    .then((res) => {
 
-    const moviesRes = await fetch(moviesUrl, options)
-    .then(res => res.json())
+        if (!res.ok) {
+
+            logger.error(`Error from getRandomContent: Failed to get movies content - ${res.statusText}`);
+            throw new HttpsError("internal", "Falha ao buscar filmes");
+        }
+
+        return res.json();
+    })
     .catch((err) => {
 
         logger.error(`Error from getRandomContent: Failed to get movies content - ${err}`);
+        throw new HttpsError("unknown", "Algo deu errado ao buscar por filmes");
     });
     
-    const seriesRes = await fetch(seriesURL, options)
-    .then(res => res.json())
+    logger.info("Info from getRandomContent: Movies content fetched");
+    
+
+    const rawSeriesJson = await fetch(seriesURL, options)
+    .then((res) => {
+
+        if (!res.ok) {
+
+            logger.error(`Error from getRandomContent: Failed to get series content - ${res.statusText}`);
+            throw new HttpsError("internal", "Falha ao buscar séries");
+        }
+
+        return res.json();
+    })
     .catch((err) => {
         
         logger.error(`Error from getRandomContent: Failed to get series content - ${err}`);
+        throw new HttpsError("unknown", "Algo deu errado ao buscar por séries");
     });
- 
-    if (!moviesRes && !seriesRes) {
 
-        logger.error("Error from getRandomContent: Failed to fetch content");
-        throw new HttpsError("internal", "Falha ao buscar conteúdos");
-    }
+    logger.info("Info from getRandomContent: Series content fetched");
 
-    // WIP
-    // const response = mixJsons(moviesRes, seriesRes);
+
+    const parsedMovies: ResponseContentType = {
+        page: rawMoviesJson.page, 
+        total_pages: rawMoviesJson.total_pages, 
+        results: parseSimpleContent(rawMoviesJson, rawMoviesJson.results.length), 
+        category: "movie"
+    };
+
+    const parsedSeries: ResponseContentType = {
+
+        page: rawSeriesJson.page,
+        total_pages: rawSeriesJson.total_pages,
+        results: parseSimpleContent(rawSeriesJson, rawSeriesJson.results.length),
+        category: "tv"
+    };
+
+    const response: ResponseContentType[] = [parsedMovies, parsedSeries];
+
+    logger.info("Info from getRandomContent: OK");
+
+    return response;
 });

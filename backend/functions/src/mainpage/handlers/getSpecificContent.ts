@@ -1,19 +1,29 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
-import { BASE_URL, BASE_IMG_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
+import { BASE_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
+import { parseSimpleContent } from "../../shared/parseSimpleContent";
+import { ResponseContentType } from "../types/responseContentType";
 
 export const getSpecificContent = onCall(async (request) => {
 
-    const { contentName } = request.data ?? {};
+    const { contentName, pageNumber = 1 } = request.data ?? {};
 
     if (!contentName) {
 
-        logger.error("Error from getRandomContent: Content name is missing");
+        logger.error("Error from getSpecificContent: Content name is missing");
         throw new HttpsError("invalid-argument", "Nome do conteúdo ausente");
     }
-    
-    const moviesUrl = `${BASE_URL}/search/movies?${contentName}&include_adult=false&language=${LANGUAGE}&region=${REGION}`;
-    const seriesURL = `${BASE_URL}/search/tv?query=${contentName}&include_adult=false&language=${LANGUAGE}`;
+
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+
+        logger.error("Error from getSpecificContent: Invalid page number");
+        throw new HttpsError("invalid-argument", "Página inválida");
+    }
+
+    const moviesUrl = `${BASE_URL}/search/movie?query=${contentName}&include_adult=false&language=${LANGUAGE}&page=${pageNumber}&region=${REGION}`;
+    const seriesURL = `${BASE_URL}/search/tv?query=${contentName}&include_adult=false&language=${LANGUAGE}&page=${pageNumber}`;
 
     const options = {
 
@@ -22,29 +32,67 @@ export const getSpecificContent = onCall(async (request) => {
             accept: "application/json",
             Authorization: `Bearer ${API_TOKEN}`
         }
-    }
+    };
 
+    const rawMoviesJson = await fetch(moviesUrl, options)
+    .then((res) => {
 
-    const moviesRes = await fetch(moviesUrl, options)
-    .then(res => res.json())
+        if (!res.ok) {
+
+            logger.error(`Error from getSpecificContent: Failed to get movies content - ${res.statusText}`);
+            throw new HttpsError("internal", "Falha ao buscar filmes");
+        }
+
+        return res.json();
+    })
     .catch((err) => {
 
-        logger.error(`Error from getRandomContent: Failed to get movies content - ${err}`);
+        logger.error(`Error from getSpecificContent: Something went wrong while fetching movies - ${err}`);
+        throw new HttpsError("unknown", "Algo deu errado ao buscar por filmes");
     });
     
-    const seriesRes = await fetch(seriesURL, options)
-    .then(res => res.json())
+    logger.info("Info from getSpecificContent: Movies content fetched");
+
+
+    const rawSeriesJson = await fetch(seriesURL, options)
+    .then((res) => {
+
+        if (!res.ok) {
+
+            logger.error(`Error from getSpecificContent: Failed to get series content - ${res.statusText}`);
+            throw new HttpsError("internal", "Falha ao buscar séries");
+        }
+
+        return res.json();
+    })
     .catch((err) => {
         
-        logger.error(`Error from getRandomContent: Failed to get series content - ${err}`);
+        logger.error(`Error from getSpecificContent: Failed to get series content - ${err}`);
+        throw new HttpsError("unknown", "Algo deu errado ao buscar por séries");
     });
- 
-    if (!moviesRes && !seriesRes) {
 
-        logger.error("Error from getRandomContent: Failed to fetch content");
-        throw new HttpsError("internal", "Falha ao buscar conteúdos");
-    }
+    logger.info("Info from getSpecificContent: Series content fetched");
 
-    // WIP
-    // const response = mixJsons(moviesRes, seriesRes);
+
+    const parsedMovies: ResponseContentType = {
+
+        page: rawMoviesJson.page, 
+        total_pages: rawMoviesJson.total_pages, 
+        results: parseSimpleContent(rawMoviesJson, rawMoviesJson.results.length), 
+        category: "movie"
+    };
+
+    const parsedSeries: ResponseContentType = {
+
+        page: rawSeriesJson.page,
+        total_pages: rawSeriesJson.total_pages,
+        results: parseSimpleContent(rawSeriesJson, rawSeriesJson.results.length),
+        category: "tv"
+    };
+
+    const response: ResponseContentType[] = [parsedMovies, parsedSeries];
+
+    logger.info("Info from getSpecificContent: OK");
+    
+    return response;
 });

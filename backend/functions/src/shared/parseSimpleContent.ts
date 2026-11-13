@@ -10,7 +10,7 @@ export function parseSimpleContent(rawJson: any, resultsQuantity: number): Simpl
 
         const {id, backdrop_path: banner_path, poster_path} = rawJson.results[i];
 
-        if (!banner_path || !poster_path) continue; // Ignorar conteúdos sem img ou n?
+        if (!banner_path || !poster_path) continue;
 
         parsedContent.push({id, banner_path, poster_path});
     }

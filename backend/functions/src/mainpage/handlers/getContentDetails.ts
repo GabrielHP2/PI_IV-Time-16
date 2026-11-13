@@ -46,7 +46,7 @@ export const getContentDetails = onCall(async (request) => {
 
         case "movie":
             
-            url = `${BASE_URL}/movie/${contentId}?append_to_response=recommendations%2C%20watch%2Fprovider&language=${LANGUAGE}`;
+            url = `${BASE_URL}/movie/${contentId}?append_to_response=recommendations%2Cwatch%2Fproviders&language=${LANGUAGE}`;
 
             const rawMovieDetails = await fetch(url, options)
             .then((res) => {
@@ -67,14 +67,14 @@ export const getContentDetails = onCall(async (request) => {
 
             logger.info("Info from getContentDetails: Movie details fetched");
 
-            parsedDetails = parseDetailedContent(rawMovieDetails, "movie"); 
+            parsedDetails = parseDetailedContent(rawMovieDetails); 
 
         break;
 
 
         case "tv":
 
-            url = `${BASE_URL}/tv/${contentId}?append_to_response=recommendations%2C%20watch%2Fproviders&language=${LANGUAGE}`;    
+            url = `${BASE_URL}/tv/${contentId}?append_to_response=recommendations%2Cwatch%2Fproviders&language=${LANGUAGE}`;    
             
             const rawSeriesDetails = await fetch(url, options)
             .then((res) => {
@@ -96,12 +96,12 @@ export const getContentDetails = onCall(async (request) => {
 
             logger.info("Info from getContentDetails: Series details fetched");
 
-            parsedDetails = parseDetailedContent(rawSeriesDetails, "tv");
+            parsedDetails = parseDetailedContent(rawSeriesDetails);
 
         break;
     }
 
     logger.info("Info from getContentDetails: OK");
     
-    // return
+    return parsedDetails;
 });

@@ -16,8 +16,8 @@ export const getRandomContent = onCall(async (request) => {
         throw new HttpsError("invalid-argument", "Página inválida");
     }
 
-    const moviesUrl = `${BASE_URL}discover/movie?include_adult=false&include_video=false&language=${LANGUAGE}&page=${pageNumber}&region=${REGION}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate%7Cfree%7Cads`;
-    const seriesURL = `${BASE_URL}discover/tv?include_adult=false&include_null_first_air_dates=false&language=${LANGUAGE}&page=${pageNumber}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate%7Cfree%7Cads`;
+    const moviesUrl = `${BASE_URL}discover/movie?include_adult=false&include_video=false&language=${LANGUAGE}&page=${pageNumber}&region=${REGION}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate`;
+    const seriesURL = `${BASE_URL}discover/tv?include_adult=false&include_null_first_air_dates=false&language=${LANGUAGE}&page=${pageNumber}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate`;
     
     const options = {
 

@@ -3,6 +3,6 @@
 export interface SimpleContentType {
 
     id: number,
-    banner_path?: string,
-    poster_path?: string
+    banner_path: string,
+    poster_path: string
 }

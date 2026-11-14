@@ -2,7 +2,7 @@
 
 import * as dotenv from "dotenv";
 
-dotenv.config({path: __dirname+"/../../.env"});
+dotenv.config({path: __dirname + "/../../.env"});
 
 // Essa URL usa as funções v3 do TMDB, caso queira/precise
 // usar as v4, é necessário alterar o '3' por '4'

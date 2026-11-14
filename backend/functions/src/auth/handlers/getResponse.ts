@@ -1,3 +1,5 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 export function getResponse(responseContent: Buffer): {code: number, message: string} {
 
     if (!responseContent) throw new Error("Response content is missing");

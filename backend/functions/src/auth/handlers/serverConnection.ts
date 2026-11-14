@@ -8,7 +8,7 @@ import { OperationType } from "../types/operationType";
 import { StatusType } from "../types/statusType";
 import * as dotenv from "dotenv"
 
-dotenv.config({path: __dirname + "../../../../.env"});
+dotenv.config({path: "../../../.env"});
 
 const HOST: string = process.env.HOST ?? "localhost";
 const PORT: number = process.env.PORT ? Number(process.env.PORT) : 8080;

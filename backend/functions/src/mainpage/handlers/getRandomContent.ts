@@ -8,7 +8,7 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getRandomContent = onCall(async (request) => {
 
-    const { pageNumber } = request.data ?? 1;
+    const { page: pageNumber = 1 } = request.data ?? {};
 
     if (!Number.isInteger(pageNumber) || pageNumber < 1) {
     
@@ -66,7 +66,6 @@ export const getRandomContent = onCall(async (request) => {
     });
 
     logger.info("Info from getRandomContent: Series content fetched");
-
 
     const parsedMovies: ResponseContentType = {
         page: rawMoviesJson.page, 

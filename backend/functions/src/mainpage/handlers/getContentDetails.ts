@@ -62,7 +62,7 @@ export const getContentDetails = onCall(async (request) => {
             .catch((err) => {
 
                 logger.error(`Error from getContentDetails: Failed to get movie details - ${err}`);
-                throw new HttpsError("unknown", `Algo deu errado ao buscar detalhes do conteúdo - ${err}`);
+                throw new HttpsError("unknown", "Algo deu errado ao buscar detalhes do conteúdo");
             });
 
             logger.info("Info from getContentDetails: Movie details fetched");
@@ -91,7 +91,7 @@ export const getContentDetails = onCall(async (request) => {
             .catch((err) => {
 
                 logger.error(`Error from getContentDetails: Failed to get series details - ${err}`);
-                throw new HttpsError("unknown", `Algo deu errado ao buscar detalhes do conteúdo - ${err}`);
+                throw new HttpsError("unknown", "Algo deu errado ao buscar detalhes do conteúdo");
             });
 
             logger.info("Info from getContentDetails: Series details fetched");

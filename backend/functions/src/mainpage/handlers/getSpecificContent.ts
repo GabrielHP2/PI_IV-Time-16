@@ -8,7 +8,7 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getSpecificContent = onCall(async (request) => {
 
-    const { contentName, pageNumber = 1 } = request.data ?? {};
+    const { title: contentName, page: pageNumber = 1 } = request.data ?? {};
 
     if (!contentName) {
 

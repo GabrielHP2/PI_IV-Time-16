@@ -7,14 +7,15 @@ import { getResponse } from "./getResponse";
 import { OperationType } from "../types/operationType";
 import { StatusType } from "../types/statusType";
 import * as dotenv from "dotenv"
+import * as path from "path";
 
-dotenv.config({path: "../../../.env"});
+dotenv.config({path: path.resolve(__dirname, "../../../.env")});
 
 const HOST: string = process.env.HOST ?? "localhost";
 const PORT: number = process.env.PORT ? Number(process.env.PORT) : 8080;
 
 export async function serverConnection(operationType: OperationType, requestContent: {}): Promise<{code: number, message: string}> {
-
+    
     const connection = new net.Socket();
     connection.setTimeout(10000);
     

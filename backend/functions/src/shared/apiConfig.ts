@@ -1,8 +1,9 @@
 // Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import * as dotenv from "dotenv";
+import * as path from "path";
 
-dotenv.config({path: __dirname + "/../../.env"});
+dotenv.config({path: path.resolve(__dirname, "../../.env")});
 
 // Essa URL usa as funções v3 do TMDB, caso queira/precise
 // usar as v4, é necessário alterar o '3' por '4'

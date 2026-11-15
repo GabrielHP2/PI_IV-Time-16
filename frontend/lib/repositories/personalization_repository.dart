@@ -13,6 +13,21 @@ class PersonalizationRepository {
     currentMonthlySpend.value = value;
   }
 
+  // Orçamento mensal que o usuário deseja atingir.
+  static final ValueNotifier<double?> desiredMonthlySpend =
+      ValueNotifier<double?>(null);
+
+  static void setDesiredMonthlySpend(double value) {
+    desiredMonthlySpend.value = value;
+  }
+
+  // Indica que o usuário registrou a prévia do planejamento.
+  static final ValueNotifier<bool> isPlanRegistered = ValueNotifier<bool>(false);
+
+  static void setPlanRegistered(bool value) {
+    isPlanRegistered.value = value;
+  }
+
   // Plataformas que o usuário informou assinar.
   static final ValueNotifier<List<String>> subscribedPlatforms =
       ValueNotifier<List<String>>([]);

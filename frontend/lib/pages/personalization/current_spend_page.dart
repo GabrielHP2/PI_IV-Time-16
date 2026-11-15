@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../components/widgets/primary_button.dart';
 import '../../repositories/personalization_repository.dart';
+import '../../routes.dart';
 import '../../theme/app_theme.dart';
 
 class CurrentSpendPage extends StatefulWidget {
@@ -59,12 +60,7 @@ class _CurrentSpendPageState extends State<CurrentSpendPage> {
     }
 
     PersonalizationRepository.setCurrentMonthlySpend(spend);
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('Gasto mensal salvo com sucesso!')),
-      );
+    Navigator.pushNamed(context, AppRoutes.desiredSpend);
   }
 
   @override

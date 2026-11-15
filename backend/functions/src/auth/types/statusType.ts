@@ -1,3 +1,5 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 export enum StatusType {
 
     OK = 200,

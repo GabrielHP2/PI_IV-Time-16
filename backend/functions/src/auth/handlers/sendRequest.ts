@@ -1,3 +1,5 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 import { Socket } from "net";
 
 export function sendRequest(connection: Socket, operationType: string, requestContent: {}): void {

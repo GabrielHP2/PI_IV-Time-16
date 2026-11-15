@@ -1,23 +1,31 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 import * as net from "net";
 import * as logger from "firebase-functions/logger";
 import { sendRequest } from "./sendRequest";
 import { getResponse } from "./getResponse";
+import { OperationType } from "../types/operationType";
+import { StatusType } from "../types/statusType";
+import * as dotenv from "dotenv"
+import * as path from "path";
 
-const HOST: string = "localhost";
-const PORT: number = 8080;
+dotenv.config({path: path.resolve(__dirname, "../../../.env")});
 
-export async function serverConnection(operationType: string, requestContent: {}): Promise<{code: number, message: string}> {
+const HOST: string = process.env.HOST ?? "localhost";
+const PORT: number = process.env.PORT ? Number(process.env.PORT) : 8080;
 
+export async function serverConnection(operationType: OperationType, requestContent: {}): Promise<{code: number, message: string}> {
+    
     const connection = new net.Socket();
     connection.setTimeout(10000);
     
-    let userAddress: string;
+    let userAddress: string = "UNKNOWN";
 
     return new Promise((resolve, reject) => {
 
         connection.connect(PORT, HOST, () => {
             
-            console.log("Trying to connect to the server...");
+            logger.info("Info from serverConnection: A user is trying to connect to the server");
         });
 
         connection.on('connect', () => {
@@ -25,7 +33,6 @@ export async function serverConnection(operationType: string, requestContent: {}
             userAddress = connection.localAddress ?? "UNKNOWN";
 
             logger.info(`Info from serverConnection: User ${userAddress} connected to the server successfully`);
-            console.log(`User ${userAddress} connected to the server successfully`);
 
             connection.setKeepAlive(true);
             
@@ -36,64 +43,73 @@ export async function serverConnection(operationType: string, requestContent: {}
             } catch (err) {
 
                 logger.error(`Error from serverConnection: Failed to prepare request content - ${err}`);
-                console.error(`Failed to prepare request content: ${err}`);
                 
                 reject(err);
-                connection.destroy();
+                connection.emit("stop");
             }
         });
 
         connection.on('jsonReady', (data: string) => {
 
-            connection._write(data, "utf8", () => {
+            connection.write(data, "utf8", () => {
 
                 logger.info(`Info from serverConnection: User ${userAddress} sent a request`);
-                console.log(`User ${userAddress} sent a request`);
             });
         });
 
         connection.on('data', (data: Buffer) => {
             
-            logger.info(`Info from serverConnection: User ${userAddress} received response from server`);
-            console.log(`User ${userAddress} received response from server`);
+            logger.info(`Info from serverConnection: User ${userAddress} received a response from the server`);
             
             try {
 
-                resolve(getResponse(data));
+                const res = getResponse(data);
 
-                connection.destroy();
+                if (res.code === StatusType.OK) {
+                    
+                    resolve(res);
+                    connection.emit("stop");
+                }
+
+                else if (res.code === StatusType.ACCEPTED) logger.info(`Info from serverConnection: Server accepted User ${userAddress} close request`);
+
+                else {
+
+                    reject(res);
+                    connection.emit("stop");
+                }
 
             } catch (err) {
 
                 logger.error(`Error from serverConnection: Failed to manage response - ${err}`);
-                console.error(`Failed to manage response: ${err}`);
 
                 reject(err);
-                connection.destroy();
+
+                connection.emit("stop");
             }
+        });
+
+        connection.on('stop', () => {
+
+            const data = {operation: OperationType.CLOSE};
+
+            connection.end(JSON.stringify(data) + "\n", "utf-8", () => {
+
+                logger.info(`Info from serverConnection: User ${userAddress} is trying to cease connection`);
+            });
         });
     
         connection.on('timeout', () => {
 
             logger.info(`Info from serverConnection: User ${userAddress} connection timed out`);
-            console.log(`User ${userAddress} connection timed out`)
 
             reject(new Error("Connection timed out"));
-            connection.destroy();
-        });
-
-        connection.on('end', () => {
-
-            logger.info("Info from serverConnection: Server connection ended");
-            console.log("Server connection ended...");
-
             connection.destroy();
         });
 
         connection.on('error', (err) => {
 
             logger.error(`Error from serverConnection: Something went wrong - ${err}`);
-            console.error(`Something went wrong: ${err}`);
 
             reject(err);
             connection.destroy();
@@ -102,7 +118,6 @@ export async function serverConnection(operationType: string, requestContent: {}
         connection.on('close', () => {
 
             logger.info(`Info from serverConnection: User ${userAddress} disconnected from the server`);
-            console.log(`User ${userAddress} disconnected from the server`);
         });
     });
 }

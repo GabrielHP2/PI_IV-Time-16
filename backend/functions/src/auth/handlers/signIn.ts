@@ -1,7 +1,7 @@
 import { HttpsError, onCall} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import { OperationType } from "../types/operationType";
-import { serverConnection } from "../../shared/serverConnection";
+import { serverConnection } from "./serverConnection";
 
 export const signIn = onCall(async (request) => {
     

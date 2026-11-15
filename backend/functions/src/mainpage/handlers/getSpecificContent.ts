@@ -8,6 +8,12 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getSpecificContent = onCall(async (request) => {
 
+    if (!request.auth) {
+        
+        logger.error("Error from getSpecificContent: User not authenticated");
+        throw new HttpsError("unauthenticated", "Usuário não autenticado");
+    }
+
     const { title: contentName, page: pageNumber = 1 } = request.data ?? {};
 
     if (!contentName) {

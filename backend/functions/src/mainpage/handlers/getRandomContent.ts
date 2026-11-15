@@ -8,11 +8,17 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getRandomContent = onCall(async (request) => {
 
+    if (!request.auth) {
+    
+        logger.error("Error from getRandomContent: User not authenticated");
+        throw new HttpsError("unauthenticated", "Usuário não autenticado");
+    }
+    
     const { page: pageNumber = 1 } = request.data ?? {};
 
     if (!Number.isInteger(pageNumber) || pageNumber < 1) {
     
-        logger.error("Error from getSpecificContent: Invalid page number");
+        logger.error("Error from getRandomContent: Invalid page number");
         throw new HttpsError("invalid-argument", "Página inválida");
     }
 

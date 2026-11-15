@@ -1,3 +1,5 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 package src;
 
 import java.io.IOException;
@@ -56,7 +58,7 @@ public class Server {
             while (true) {
                 
                 System.out.println("\nType EXIT to shutdown the server");
-                System.out.print("> ");
+                System.out.println();
                 command = scanner.nextLine();
                 
                 if (command.toUpperCase().equals("EXIT")) {
@@ -83,7 +85,6 @@ public class Server {
                     }
                 }
             }
-
 
             System.out.println("\nServer closed");
             System.exit(0);

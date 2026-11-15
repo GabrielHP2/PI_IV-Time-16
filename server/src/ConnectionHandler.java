@@ -1,3 +1,5 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 package src;
 
 import java.io.BufferedReader;
@@ -13,6 +15,7 @@ import java.util.HashMap;
 
 import components.JsonParser;
 import models.ResponseStatus;
+import services.*;
 import utils.InvalidJsonContentException;
 import utils.UnknownOperationException;
 
@@ -96,11 +99,31 @@ public class ConnectionHandler extends Thread {
 
                 switch (formattedBody.get("operation")) {
                     
-                    case "ping" -> this.user.sendJson(ResponseStatus.OK ,"pong");
+                    case "reset" -> {
+
+                        if (ResetPasswordService.isValid(formattedBody.get("email"))) {
+
+                            this.user.sendJson(ResponseStatus.OK, "OK");
+                        } 
+
+                        else this.user.sendJson(ResponseStatus.BAD_REQUEST, "Invalid email");
+                    }
+
+                    case "change" -> {
+                        
+                        if (ChangePasswordService.isValid(formattedBody.get("password"), formattedBody.get("confirmPassword"))) {
+
+                            this.user.sendJson(ResponseStatus.OK, "OK");
+                        }
+
+                        else this.user.sendJson(ResponseStatus.BAD_REQUEST, "Invalid password");
+                    }
+
+                    case "ping" -> this.user.sendJson(ResponseStatus.OK ,"Pong");
 
                     case "close" -> {
                         
-                        this.user.sendJson(ResponseStatus.ACCEPTED ,"connection closed");
+                        this.user.sendJson(ResponseStatus.ACCEPTED ,"Connection closed");
 
                         this.user.shutDown();
 

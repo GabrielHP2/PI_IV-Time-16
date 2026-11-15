@@ -1,3 +1,5 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
 package utils;
 
 public class InvalidJsonContentException extends Exception {

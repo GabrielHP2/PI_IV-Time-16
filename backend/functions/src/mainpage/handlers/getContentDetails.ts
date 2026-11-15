@@ -7,6 +7,12 @@ import { parseDetailedContent } from "../../shared/parseDetailedContent";
 
 export const getContentDetails = onCall(async (request) => {
 
+    if (!request.auth) {
+
+        logger.error("Error from getContentDetails: User not authenticated");
+        throw new HttpsError("unauthenticated", "Usuário não autenticado");
+    }
+
     const { id: contentId, category } = request.data ?? {};
  
     if (!contentId || !category) {

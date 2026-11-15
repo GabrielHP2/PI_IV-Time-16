@@ -5,5 +5,7 @@ export enum OperationType {
     LOGIN = "login",
     REGISTER = "register",
     PING = "ping",
-    CLOSE = "close"
+    CLOSE = "close",
+    RESET = "reset",
+    CHANGE = "change"
 }

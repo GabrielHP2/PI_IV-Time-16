@@ -24,6 +24,10 @@ public class JsonParser {
 
             case "register" -> formattedBody = JsonParser.parseRegister(json);
 
+            case "reset" -> formattedBody = JsonParser.parseResetPassword(json);
+
+            case "change" -> formattedBody = JsonParser.parseChangePassword(json);
+
             case "ping", "close" -> formattedBody = new HashMap<String, String>(1);
             
             default -> throw new UnknownOperationException("Operation provided is not supported");
@@ -59,16 +63,32 @@ public class JsonParser {
         return formattedBody;
     }
     
-    private static HashMap<String, String> parseResetPassword(String json) {
+    private static HashMap<String, String> parseResetPassword(String json) throws InvalidJsonContentException {
         
-        // TODO: alterar o tamanho do hashmap
         HashMap<String, String> formattedBody = new HashMap<String, String>(2);
 
-        // Fazer o REGEX
-        Pattern resetPassowordRegex = Pattern.compile("");
-        Matcher matcher = resetPassowordRegex.matcher(json);
+        Pattern resetPasswordRegex = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"");
+        Matcher matcher = resetPasswordRegex.matcher(json);
         
+        while (matcher.find()) formattedBody.put(matcher.group(1), matcher.group(2));
+
+        if (!formattedBody.containsKey("email")) throw new InvalidJsonContentException("Email field is missing");
+
+        return formattedBody;
+    }
     
+    private static HashMap<String, String> parseChangePassword(String json) throws InvalidJsonContentException {
+        
+        HashMap<String, String> formattedBody = new HashMap<String, String>(3);
+    
+        Pattern changePasswordRegex = Pattern.compile("\"(password|confirmPassword)\"\\s*:\\s*\"([^\"]*)\"");
+        Matcher matcher = changePasswordRegex.matcher(json);
+
+        while (matcher.find()) formattedBody.put(matcher.group(1), matcher.group(2));
+
+        if (!formattedBody.containsKey("password")) throw new InvalidJsonContentException("");
+        if (!formattedBody.containsKey("confirmPassword")) throw new InvalidJsonContentException("");
+
         return formattedBody;
     }
 }

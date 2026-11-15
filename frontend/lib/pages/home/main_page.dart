@@ -1,9 +1,15 @@
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../models/movie_model.dart';
 import '../../components/widgets/movie_card.dart';
+import '../../components/widgets/notification_panel.dart';
 import '../../theme/app_theme.dart';
+import '../../models/app_notification.dart';
+import '../../repositories/notification_repository.dart';
+import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 
 class MainPage extends StatefulWidget {
@@ -64,6 +70,99 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  void _showNotifications() {
+    final screenSize = MediaQuery.of(context).size;
+
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Fechar painel de notificações',
+      barrierColor: Colors.black.withValues(alpha: 0.08),
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: kToolbarHeight + 8,
+                right: 12,
+                child: NotificationPanel(
+                  platforms:
+                      PersonalizationRepository.subscribedPlatforms.value,
+                  onClose: () => Navigator.of(dialogContext).pop(),
+                  width: math.min(
+                    340.0,
+                    math.max(210.0, screenSize.width * 0.68),
+                  ),
+                  maxHeight: math.min(360.0, screenSize.height * 0.48),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOut,
+        );
+        return FadeTransition(
+          opacity: curvedAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.04),
+              end: Offset.zero,
+            ).animate(curvedAnimation),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationAction() {
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: PersonalizationRepository.subscribedPlatforms,
+      builder: (context, platforms, child) {
+        return ValueListenableBuilder<List<AppNotification>>(
+          valueListenable: NotificationRepository.items,
+          builder: (context, notifications, child) {
+            final subscribedPlatforms = platforms.toSet();
+            final hasUnread = notifications.any(
+              (notification) =>
+                  subscribedPlatforms.contains(notification.platform) &&
+                  !notification.isRead,
+            );
+
+            return IconButton(
+              tooltip: 'Notificações',
+              onPressed: _showNotifications,
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications),
+                  if (hasUnread)
+                    Positioned(
+                      top: -1,
+                      right: -2,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE21D3D),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _onNavigationTap(int index) {
     switch (index) {
       case 0:
@@ -91,15 +190,7 @@ class _MainPageState extends State<MainPage> {
             },
             icon: const Icon(Icons.search),
           ),
-          IconButton(
-            tooltip: 'Notificações',
-            onPressed: () {
-              _showPendingMessage(
-                'O painel de notificações será implementado.',
-              );
-            },
-            icon: const Icon(Icons.notifications),
-          ),
+          _buildNotificationAction(),
         ],
       ),
       body: SingleChildScrollView(

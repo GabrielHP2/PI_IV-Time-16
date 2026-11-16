@@ -6,7 +6,7 @@ import { BASE_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
 import { parseSimpleContent } from "../../shared/parseSimpleContent";
 import { ResponseContentType } from "../types/responseContentType";
 
-export const getRandomContent = onCall(async (request) => {
+export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
     if (!request.auth) {
     
@@ -30,7 +30,7 @@ export const getRandomContent = onCall(async (request) => {
         method: "GET",
         headers: {
             accept: "application/json",
-            Authorization: `Bearer ${API_TOKEN}`
+            Authorization: `Bearer ${API_TOKEN.value()}`
         }
     };
 

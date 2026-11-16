@@ -18,7 +18,7 @@ public class ChangePasswordService {
 
         if (!password.equals(confirmPassword)) return false;
 
-        Pattern passwordRegex = Pattern.compile("\"^(?=.{6,126}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\\\\d)(?=.*[^A-Za-z0-9]).+$\"");
+        Pattern passwordRegex = Pattern.compile("^(?=.{6,126}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$");
 
         return passwordRegex.matcher(password).matches();
     }

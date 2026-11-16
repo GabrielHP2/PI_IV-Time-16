@@ -6,7 +6,7 @@ import { BASE_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
 import { parseSimpleContent } from "../../shared/parseSimpleContent";
 import { ResponseContentType } from "../types/responseContentType";
 
-export const getSpecificContent = onCall(async (request) => {
+export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
     if (!request.auth) {
         
@@ -36,7 +36,7 @@ export const getSpecificContent = onCall(async (request) => {
         method: "GET",
         headers: {
             accept: "application/json",
-            Authorization: `Bearer ${API_TOKEN}`
+            Authorization: `Bearer ${API_TOKEN.value()}`
         }
     };
 

@@ -5,7 +5,7 @@ import * as logger from "firebase-functions/logger";
 import { BASE_URL, API_TOKEN, LANGUAGE } from "../../shared/apiConfig";
 import { parseDetailedContent } from "../../shared/parseDetailedContent";
 
-export const getContentDetails = onCall(async (request) => {
+export const getContentDetails = onCall({secrets: [API_TOKEN]}, async (request) => {
 
     if (!request.auth) {
 
@@ -42,7 +42,7 @@ export const getContentDetails = onCall(async (request) => {
         method: "GET",
         headers: {
             accept: "application/json",
-            Authorization: `Bearer ${API_TOKEN}`
+            Authorization: `Bearer ${API_TOKEN.value()}`
         }
     };
 

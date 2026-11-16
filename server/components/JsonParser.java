@@ -70,7 +70,7 @@ public class JsonParser {
         Pattern resetPasswordRegex = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = resetPasswordRegex.matcher(json);
         
-        while (matcher.find()) formattedBody.put(matcher.group(1), matcher.group(2));
+        if (matcher.find()) formattedBody.put("email", matcher.group(1));
 
         if (!formattedBody.containsKey("email")) throw new InvalidJsonContentException("Email field is missing");
 

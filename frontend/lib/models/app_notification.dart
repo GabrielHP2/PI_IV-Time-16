@@ -1,3 +1,5 @@
+// Feito por Felipe Batista Bastos - 25005337
+
 enum NotificationChangeType {
   added,
   removed,

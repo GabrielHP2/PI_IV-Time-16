@@ -1,4 +1,6 @@
 
+// Adições e modificações por Felipe Batista Bastos - 25005337
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';

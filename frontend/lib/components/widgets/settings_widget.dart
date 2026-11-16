@@ -1,3 +1,6 @@
+
+// Adições e modificações por Felipe Batista Bastos - 25005337
+
 import 'package:flutter/material.dart';
 import '../../models/settings/setting_section.dart';
 

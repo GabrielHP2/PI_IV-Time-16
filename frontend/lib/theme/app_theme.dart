@@ -1,5 +1,5 @@
 // Feito por Luis Felipe Pontes Mita - 25018740
-
+// Adições e modificações por Felipe Batista Bastos - 25005337
 import 'package:flutter/material.dart';
 
 class AppColors {

@@ -1,3 +1,5 @@
+// Feito por Felipe Batista Bastos - 25005337
+
 import 'package:flutter/foundation.dart';
 
 import '../models/app_notification.dart';

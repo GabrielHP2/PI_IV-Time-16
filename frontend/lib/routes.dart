@@ -1,5 +1,5 @@
 // Feito por Luis Felipe Pontes Mita - 25018740
-
+// Adições e modificações por Felipe Batista Bastos - 25005337
 import 'package:flutter/material.dart';
 
 import 'pages/auth/login_page.dart';
@@ -28,13 +28,13 @@ class AppRoutes {
   static const detailedView = '/detailed-view';
   static const wishlist = '/wishlist';
   static const settings = '/settings';
-  static const platforms = '/personalization/platforms';
-  static const ongoingContent = '/personalization/ongoing-content';
-  static const desiredContent = '/personalization/desired-content';
-  static const currentSpend = '/personalization/current-spend';
-  static const desiredSpend = '/personalization/desired-spend';
-  static const subscriptionPlan = '/personalization/subscription-plan';
-  static const welcome = '/personalization/welcome';
+  static const platforms = '/platforms';
+  static const ongoingContent = '/ongoing-content';
+  static const desiredContent = '/desired-content';
+  static const currentSpend = '/current-spend';
+  static const desiredSpend = '/desired-spend';
+  static const subscriptionPlan = '/subscription-plan';
+  static const welcome = '/welcome';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashPage(),

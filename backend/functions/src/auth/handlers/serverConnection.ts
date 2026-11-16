@@ -61,17 +61,11 @@ export async function serverConnection(operationType: OperationType, requestCont
 
                 const res = getResponse(data);
 
-                if (res.code === StatusType.OK) {
-                    
-                    resolve(res);
-                    connection.emit("stop");
-                }
-
-                else if (res.code === StatusType.ACCEPTED) logger.info(`Info from serverConnection: Server accepted User ${userAddress} close request`);
+                if (res.code === StatusType.ACCEPTED) logger.info(`Info from serverConnection: Server accepted User ${userAddress} close request`);
 
                 else {
 
-                    reject(res);
+                    resolve(res);
                     connection.emit("stop");
                 }
 

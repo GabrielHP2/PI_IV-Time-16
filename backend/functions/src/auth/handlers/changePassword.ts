@@ -49,6 +49,8 @@ export const changePassword = onCall(async (request) => {
 
     } catch (err) {
 
+        if (err instanceof HttpsError) throw err;
+
         logger.error(`Error from changePassword: Something went wrong - ${err}`);
         throw new HttpsError("internal", "Falha ao processar requisição de troca de senha");
     }
@@ -72,6 +74,8 @@ export const changePassword = onCall(async (request) => {
         return {code: 200, message: "Senha atualizada"};
 
     } catch (err) {
+
+        if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from changePassword: Something went wrong - ${err}`);
         throw new HttpsError("internal", "Falha ao processar requisição de trocar a senha");

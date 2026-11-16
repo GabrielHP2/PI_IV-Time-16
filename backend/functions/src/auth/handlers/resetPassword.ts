@@ -43,6 +43,8 @@ export const resetPassword = onCall(async (request) => {
 
     } catch (err) {
 
+        if (err instanceof HttpsError) throw err;
+
         logger.error(`Error from resetPassword: Something went wrong - ${err}`);
         throw new HttpsError("internal", "Falha ao processar requisição de redefinição");
     }
@@ -68,6 +70,8 @@ export const resetPassword = onCall(async (request) => {
         return {code: 200, uid: userId};
 
     } catch (err) {
+
+        if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from resetPassword: Something went wrong - ${err}`);
         throw new HttpsError("internal", "Falha ao processar requisição de redefinição");

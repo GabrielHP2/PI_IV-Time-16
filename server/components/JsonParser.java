@@ -86,8 +86,8 @@ public class JsonParser {
 
         while (matcher.find()) formattedBody.put(matcher.group(1), matcher.group(2));
 
-        if (!formattedBody.containsKey("password")) throw new InvalidJsonContentException("");
-        if (!formattedBody.containsKey("confirmPassword")) throw new InvalidJsonContentException("");
+        if (!formattedBody.containsKey("password")) throw new InvalidJsonContentException("Password field is missing");
+        if (!formattedBody.containsKey("confirmPassword")) throw new InvalidJsonContentException("Confirm password field is missing");
 
         return formattedBody;
     }

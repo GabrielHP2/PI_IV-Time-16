@@ -1,3 +1,5 @@
+// Feito por Luis Felipe Pontes Mita - 25018740
+
 import 'package:flutter/material.dart';
 
 // Funções de validação, usadas no parâmetro `validator` dos campos.
@@ -14,8 +16,8 @@ String? validateRequired(String? value) {
 String? validatePassword(String? value) {
   final error = validateRequired(value);
   if (error != null) return error;
-  if (value!.length <= 8 || value.length >= 16) {
-    return 'A senha deve ter entre 9 e 15 caracteres';
+  if (value!.length < 8 || value.length > 16) {
+    return 'A senha deve ter entre 8 e 16 caracteres';
   }
   return null;
 }

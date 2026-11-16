@@ -1,3 +1,5 @@
+// Feito por Luis Felipe Pontes Mita - 25018740
+
 import 'package:flutter/material.dart';
 
 import '../../routes.dart';
@@ -75,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
               text: 'Entrar',
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-
+                  Navigator.pushNamed(context, AppRoutes.home);
                 }
               },
             ),

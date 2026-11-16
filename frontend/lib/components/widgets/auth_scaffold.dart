@@ -1,3 +1,5 @@
+// Feito por Luis Felipe Pontes Mita - 25018740
+
 import 'package:flutter/material.dart';
 
 /// Estrutura base das telas de autenticação.

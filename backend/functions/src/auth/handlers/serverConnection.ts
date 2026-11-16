@@ -6,16 +6,12 @@ import { sendRequest } from "./sendRequest";
 import { getResponse } from "./getResponse";
 import { OperationType } from "../types/operationType";
 import { StatusType } from "../types/statusType";
-import * as dotenv from "dotenv"
-import * as path from "path";
 
-dotenv.config({path: path.resolve(__dirname, "../../../.env")});
-
-const HOST: string = process.env.HOST ?? "localhost";
-const PORT: number = process.env.PORT ? Number(process.env.PORT) : 8080;
+const HOST: string = "localhost";
+const PORT: number = 8080;
 
 export async function serverConnection(operationType: OperationType, requestContent: {}): Promise<{code: number, message: string}> {
-    
+
     const connection = new net.Socket();
     connection.setTimeout(10000);
     
@@ -65,17 +61,11 @@ export async function serverConnection(operationType: OperationType, requestCont
 
                 const res = getResponse(data);
 
-                if (res.code === StatusType.OK) {
-                    
-                    resolve(res);
-                    connection.emit("stop");
-                }
-
-                else if (res.code === StatusType.ACCEPTED) logger.info(`Info from serverConnection: Server accepted User ${userAddress} close request`);
+                if (res.code === StatusType.ACCEPTED) logger.info(`Info from serverConnection: Server accepted User ${userAddress} close request`);
 
                 else {
 
-                    reject(res);
+                    resolve(res);
                     connection.emit("stop");
                 }
 

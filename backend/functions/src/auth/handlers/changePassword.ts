@@ -1,0 +1,83 @@
+// Autor: Gabriel Henrique Pacagnelli Pagliato
+
+import { HttpsError, onCall } from "firebase-functions/https";
+import * as logger from "firebase-functions/logger";
+import { serverConnection } from "./serverConnection";
+import { OperationType } from "../types/operationType";
+import { StatusType } from "../types/statusType";
+import { getAuth } from "firebase-admin/auth";
+
+export const changePassword = onCall(async (request) => {
+
+    const { uid, password, confirmPassword } = request.data ?? {}
+    
+    if (!uid) {
+
+        logger.error("Error from changePassword: Failed to identify the user");
+        throw new HttpsError("internal", "Falha ao identificar o usuário");
+    }
+
+    if (!password || !confirmPassword) {
+
+        logger.error("Error from changePassword: Fields missing");
+        throw new HttpsError("invalid-argument", "Todos os campos são obrigatórios");
+    }
+
+    const requestContent = {password: password, confirmPassword};
+
+    try {
+
+        const serverResponse = await serverConnection(OperationType.CHANGE, requestContent);
+
+        if (!serverResponse) {
+
+            logger.error("Error from changePassword: Failed to obtain response from server");
+            throw new HttpsError("internal", "Falha ao obter resposta do servidor");
+        }
+
+
+        if (serverResponse.code === StatusType.BAD_REQUEST) {
+
+            logger.error(`Error from changePassword: Invalid password or confirm password- ${serverResponse.message}`);
+            throw new HttpsError("invalid-argument", "Senha ou confirmar senha inválido");
+        }
+
+        if (serverResponse.code === StatusType.METHOD_NOT_ALLOWED || serverResponse.code === StatusType.INTERNAL_SERVER_ERROR) {
+
+            throw new Error(serverResponse.message);
+        }
+
+    } catch (err) {
+
+        if (err instanceof HttpsError) throw err;
+
+        logger.error(`Error from changePassword: Something went wrong - ${err}`);
+        throw new HttpsError("internal", "Falha ao processar requisição de troca de senha");
+    }
+
+
+    try {
+
+        await getAuth().updateUser(uid, {password: password, emailVerified: true})
+        .then(() => {
+
+            logger.info(`Info from changePassword: User's ${uid} password changed successfully`);
+        })
+        .catch((err) => {
+
+            logger.error(`Error from changePassword: Failed to change User's ${uid} - ${err}`);
+            throw new HttpsError("internal", "Falha ao tentar redefinir a senha");
+        });
+
+        logger.info("Info from changePassword: OK");
+
+        return {code: 200, message: "Senha atualizada"};
+
+    } catch (err) {
+
+        if (err instanceof HttpsError) throw err;
+
+        logger.error(`Error from changePassword: Something went wrong - ${err}`);
+        throw new HttpsError("internal", "Falha ao processar requisição de trocar a senha");
+    }
+});

@@ -6,7 +6,13 @@ import { BASE_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
 import { parseSimpleContent } from "../../shared/parseSimpleContent";
 import { ResponseContentType } from "../types/responseContentType";
 
-export const getSpecificContent = onCall(async (request) => {
+export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request) => {
+
+    if (!request.auth) {
+        
+        logger.error("Error from getSpecificContent: User not authenticated");
+        throw new HttpsError("unauthenticated", "Usuário não autenticado");
+    }
 
     const { title: contentName, page: pageNumber = 1 } = request.data ?? {};
 
@@ -30,7 +36,7 @@ export const getSpecificContent = onCall(async (request) => {
         method: "GET",
         headers: {
             accept: "application/json",
-            Authorization: `Bearer ${API_TOKEN}`
+            Authorization: `Bearer ${API_TOKEN.value()}`
         }
     };
 

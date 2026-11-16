@@ -6,13 +6,19 @@ import { BASE_URL, API_TOKEN, LANGUAGE, REGION } from "../../shared/apiConfig";
 import { parseSimpleContent } from "../../shared/parseSimpleContent";
 import { ResponseContentType } from "../types/responseContentType";
 
-export const getRandomContent = onCall(async (request) => {
+export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
+    if (!request.auth) {
+    
+        logger.error("Error from getRandomContent: User not authenticated");
+        throw new HttpsError("unauthenticated", "Usuário não autenticado");
+    }
+    
     const { page: pageNumber = 1 } = request.data ?? {};
 
     if (!Number.isInteger(pageNumber) || pageNumber < 1) {
     
-        logger.error("Error from getSpecificContent: Invalid page number");
+        logger.error("Error from getRandomContent: Invalid page number");
         throw new HttpsError("invalid-argument", "Página inválida");
     }
 
@@ -24,7 +30,7 @@ export const getRandomContent = onCall(async (request) => {
         method: "GET",
         headers: {
             accept: "application/json",
-            Authorization: `Bearer ${API_TOKEN}`
+            Authorization: `Bearer ${API_TOKEN.value()}`
         }
     };
 

@@ -46,13 +46,7 @@ class _WishlistPageState extends State<WishlistPage> {
         break;
 
       case 2:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'A tela de perfil ainda será implementada.',
-            ),
-          ),
-        );
+        Navigator.pushNamed(context, AppRoutes.settings);
         break;
     }
   }

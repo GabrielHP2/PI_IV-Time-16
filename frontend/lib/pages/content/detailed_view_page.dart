@@ -144,11 +144,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
         );
         break;
       case 2:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('A tela de perfil ainda será implementada.'),
-          ),
-        );
+        Navigator.pushNamed(context, AppRoutes.settings);
         break;
     }
   }

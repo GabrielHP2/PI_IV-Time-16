@@ -172,7 +172,7 @@ class _MainPageState extends State<MainPage> {
         // Já estamos na página inicial.
         break;
       case 2:
-        _showPendingMessage('A tela de perfil ainda será implementada.');
+        Navigator.pushNamed(context, AppRoutes.settings);
         break;
     }
   }

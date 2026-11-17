@@ -37,31 +37,59 @@ public class JsonParser {
 
         return formattedBody;
     }
+    private static HashMap<String, String> parseLogin(String json)
+        throws InvalidJsonContentException {
 
-    // TODO
-    private static HashMap<String, String> parseLogin(String json) {
+        HashMap<String, String> formattedBody = new HashMap<>(3);
 
-        HashMap<String, String> formattedBody = new HashMap<String, String>(4);
+        Pattern loginRegex = Pattern.compile(
+        "\"(email|password)\"\\s*:\\s*\"([^\"]*)\""
+        );
 
-        // Fazer o REGEX
-        Pattern loginRegex = Pattern.compile("");
         Matcher matcher = loginRegex.matcher(json);
 
+        while (matcher.find()) {
+            formattedBody.put(matcher.group(1), matcher.group(2));
+        }
+
+        if (!formattedBody.containsKey("email"))
+        throw new InvalidJsonContentException("Email field is missing");
+
+        if (!formattedBody.containsKey("password"))
+        throw new InvalidJsonContentException("Password field is missing");
 
         return formattedBody;
     }
 
-    private static HashMap<String, String> parseRegister(String json) {
-        
-        HashMap<String, String> formattedBody = new HashMap<String, String>(5);
+    private static HashMap<String, String> parseRegister(String json)
+        throws InvalidJsonContentException {
 
-        // Fazer o REGEX
-        Pattern registerRegex = Pattern.compile("");
-        Matcher matcher = registerRegex.matcher(json);
-        
+    HashMap<String, String> formattedBody = new HashMap<>(5);
 
-        return formattedBody;
+    Pattern registerRegex = Pattern.compile(
+        "\"(name|email|password|phoneNumber)\"\\s*:\\s*\"([^\"]*)\""
+    );
+
+    Matcher matcher = registerRegex.matcher(json);
+
+    while (matcher.find()) {
+        formattedBody.put(matcher.group(1), matcher.group(2));
     }
+
+    if (!formattedBody.containsKey("name"))
+        throw new InvalidJsonContentException("Name field is missing");
+
+    if (!formattedBody.containsKey("email"))
+        throw new InvalidJsonContentException("Email field is missing");
+
+    if (!formattedBody.containsKey("password"))
+        throw new InvalidJsonContentException("Password field is missing");
+
+    if (!formattedBody.containsKey("phoneNumber"))
+        throw new InvalidJsonContentException("Phone number field is missing");
+
+    return formattedBody;
+}
     
     private static HashMap<String, String> parseResetPassword(String json) throws InvalidJsonContentException {
         

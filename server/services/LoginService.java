@@ -1,24 +1,21 @@
 package services;
 
 public class LoginService {
-    
-    private String name;
+
     private String email;
     private String password;
 
-    public LoginService(String name, String email, String password, String phoneNumber) throws IllegalArgumentException {
+    public LoginService(String email, String password)
+            throws IllegalArgumentException {
 
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name is missing");
-        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is missing");
-        if (password == null || password.isBlank()) throw new IllegalArgumentException("Password is missing");
+        if (email == null || email.isBlank())
+            throw new IllegalArgumentException("Email is missing");
 
-        this.name = name;
-        this.email = email;
+        if (password == null || password.isBlank())
+            throw new IllegalArgumentException("Password is missing");
+
+        this.email = email.trim();
         this.password = password;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getEmail() {
@@ -29,26 +26,18 @@ public class LoginService {
         return password;
     }
 
-    // TODO: Fazer td a lógica de validação
-    private boolean isNameValid() {
-        return null;
-    }
-
     private boolean isEmailValid() {
-        return null;
+        return ResetPasswordService.isValid(this.email);
     }
 
     private boolean isPasswordValid() {
-        return null;
+        return ChangePasswordService.isValid(
+            this.password,
+            this.password
+        );
     }
 
     public boolean isValid() {
-
-        if (this.isNameValid() &&
-            this.isEmailValid() &&
-            this.isPasswordValid())
-            return true;
-
-        return false;
+        return this.isEmailValid() && this.isPasswordValid();
     }
 }

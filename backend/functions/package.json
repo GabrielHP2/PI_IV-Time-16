@@ -13,13 +13,14 @@
     "firebase:login:check": "npx firebase projects:list"
   },
   "engines": {
-    "node": "24"
+    "node": "22"
   },
   "main": "lib/index.js",
   "dependencies": {
     "dotenv": "^18.0.10",
     "firebase-admin": "^13.6.0",
     "firebase-functions": "^7.0.0",
+    "mongodb": "^7.9.0",
     "net": "^1.0.2"
   },
   "devDependencies": {

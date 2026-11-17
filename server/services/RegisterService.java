@@ -36,22 +36,26 @@ public class RegisterService {
         return phoneNumber;
     }
     
-    // TODO: Fazer td a lógica de validação
     private boolean isNameValid() {
-        return null;
-    }
-    
+    return this.name.trim().length() >= 2
+        && this.name.trim().length() <= 100;
+}
+
     private boolean isEmailValid() {
-        return null;
-    }
-    
+    return ResetPasswordService.isValid(this.email);
+}
+
     private boolean isPasswordValid() {
-        return null;
-    }
-    
+    return ChangePasswordService.isValid(this.password, this.password);
+}
+
     private boolean isPhoneNumberValid() {
-        return null;
-    }
+
+    String normalizedPhone = this.phoneNumber.replaceAll("\\D", "");
+
+    return normalizedPhone.length() >= 10
+        && normalizedPhone.length() <= 15;
+}
 
     public boolean isValid() {
 

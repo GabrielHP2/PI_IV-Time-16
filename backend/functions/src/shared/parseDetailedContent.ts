@@ -1,9 +1,9 @@
 // Autor: Gabriel Henrique Pacagnelli Pagliato
 
-import { ALLOWED_PROVIDERS } from "../mainpage/types/allowedProviders";
-import { DetailedContentType } from "../mainpage/types/detailedContentType";
-import { PlatformType } from "../mainpage/types/platformType";
-import { SimpleContentType } from "../mainpage/types/simpleContentType";
+import { DetailedContentType } from "../api/types/detailedContentType";
+import { PlatformType } from "../api/types/platformType";
+import { SimpleContentType } from "../api/types/simpleContentType";
+import { parsePlatforms } from "./parsePlatforms";
 import { parseSimpleContent } from "./parseSimpleContent";
 
 export function parseDetailedContent(rawJson: any): DetailedContentType {
@@ -29,19 +29,8 @@ export function parseDetailedContent(rawJson: any): DetailedContentType {
         genres.push(rawJson.genres[i].name);
     }
 
+    const platforms: PlatformType[] = parsePlatforms(watchProviders?.results?.BR?.flatrate);
 
-    const localPlatforms: any[] = watchProviders?.results?.BR?.flatrate ?? [];
-
-    const platforms: PlatformType[] = localPlatforms
-    .filter((provider) => ALLOWED_PROVIDERS.has(provider.provider_id))
-    .map(({provider_id, provider_name, logo_path}) => ({
-
-        platform_id: provider_id,
-        name: provider_name,
-        logo_path: logo_path
-    }));
-
-    
     const parsedContent: DetailedContentType = {
 
         id: id,

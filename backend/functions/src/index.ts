@@ -10,4 +10,4 @@ setGlobalOptions({
 });
 
 export * from "./auth";
-export * from "./mainpage";
+export * from "./api";

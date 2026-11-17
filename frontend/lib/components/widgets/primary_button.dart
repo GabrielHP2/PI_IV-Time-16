@@ -13,8 +13,7 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: ElevatedButton(
-        // Sem ação por enquanto (somente UI). Mantém o visual de botão ativo.
-        onPressed: onPressed ?? () {},
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.button,
           foregroundColor: AppColors.onDark,

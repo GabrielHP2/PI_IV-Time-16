@@ -3,6 +3,7 @@
 
 import 'dart:math' as math;
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/movie_model.dart';
@@ -13,6 +14,60 @@ import '../../models/app_notification.dart';
 import '../../repositories/notification_repository.dart';
 import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
+
+Future<List<Movie>> getLaunchingContent(int page) async {
+  final callable = FirebaseFunctions.instance.httpsCallable('getLaunchingContent');
+  final response = await callable.call({'page': page});
+
+  final data = Map<String, dynamic>.from(response.data);
+
+  final List<dynamic> jsonData = data['results'];
+
+  final List<Movie> launchingContent = jsonData
+    .map((json) => Movie.fromJson(
+          Map<String, dynamic>.from(json),
+        ))
+    .toList();
+
+  return launchingContent;
+}
+
+Future<List<Movie>> getRandomContent(int page) async {
+  final callable = FirebaseFunctions.instance.httpsCallable('getRandomContent');
+  final response = await callable.call({'page': page});
+
+  final data = Map<String, dynamic>.from(response.data);
+
+  final List<dynamic> jsonData = data['results'];
+
+  final List<Movie> randomContent = jsonData
+    .map((json) => Movie.fromJson(
+          Map<String, dynamic>.from(json),
+        ))
+    .toList();
+
+  return randomContent;
+}
+
+class Movie {
+  final int id;
+  final String banner_path;
+  final String poster_path;
+
+  Movie ({
+    required this.id,
+    required this.banner_path,
+    required this.poster_path,
+  });
+
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      id: json['id'],
+      banner_path: json['banner_path'],
+      poster_path: json['poster_path'],
+    );
+  }
+}
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -25,32 +80,40 @@ class _MainPageState extends State<MainPage> {
   final PageController _pageController = PageController();
   int _currentLaunch = 0;
 
-  final List<Movie> lancamentos = const [
-    Movie(id: '1', title: 'Filme 1', synopsis: '...', releaseDate: '2023', rating: 4.5, genre: 'Ação', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '2', title: 'Filme 2', synopsis: '...', releaseDate: '2023', rating: 4.0, genre: 'Drama', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '3', title: 'Filme 3', synopsis: '...', releaseDate: '2023', rating: 4.9, genre: 'Comédia', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '4', title: 'Filme 4', synopsis: '...', releaseDate: '2023', rating: 4.2, genre: 'Terror', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '5', title: 'Filme 5', synopsis: '...', releaseDate: '2023', rating: 4.7, genre: 'Sci-Fi', platforms: ['Netflix'], imageUrl: ''),
-  ];
+  List<Movie> lancamentos = [];
+  List<Movie> populares = [];
+  bool isLoading = true;
+  
+  Future<void> carregarFilmes() async {
+    try {
+      final resultados = await Future.wait([
+        getLaunchingContent(1),
+      getRandomContent(1),
+    ]);
 
-  final List<Movie> praVoce = const [
-    Movie(id: '6', title: 'Filme 6', synopsis: '...', releaseDate: '2022', rating: 4.0, genre: 'Drama', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '7', title: 'Filme 7', synopsis: '...', releaseDate: '2022', rating: 3.8, genre: 'Ação', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '8', title: 'Filme 8', synopsis: '...', releaseDate: '2022', rating: 4.1, genre: 'Comédia', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '9', title: 'Filme 9', synopsis: '...', releaseDate: '2022', rating: 4.3, genre: 'Terror', platforms: ['Netflix'], imageUrl: ''),
-  ];
+      if (!mounted) return;
 
-  final List<Movie> soNaNetflix = const [
-    Movie(id: '10', title: 'Netflix Original', synopsis: '...', releaseDate: '2023', rating: 4.5, genre: 'Drama', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '11', title: 'Netflix Original 2', synopsis: '...', releaseDate: '2023', rating: 4.2, genre: 'Ação', platforms: ['Netflix'], imageUrl: ''),
-    Movie(id: '12', title: 'Netflix Original 3', synopsis: '...', releaseDate: '2023', rating: 4.6, genre: 'Sci-Fi', platforms: ['Netflix'], imageUrl: ''),
-  ];
+      setState(() {
+        lancamentos = resultados[0];
+        populares = resultados[1];
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
 
-  final List<Movie> soNoDisney = const [
-    Movie(id: '13', title: 'Disney Plus 1', synopsis: '...', releaseDate: '2023', rating: 4.8, genre: 'Ficção', platforms: ['Disney+'], imageUrl: ''),
-    Movie(id: '14', title: 'Disney Plus 2', synopsis: '...', releaseDate: '2023', rating: 4.4, genre: 'Animação', platforms: ['Disney+'], imageUrl: ''),
-    Movie(id: '15', title: 'Disney Plus 3', synopsis: '...', releaseDate: '2023', rating: 4.7, genre: 'Drama', platforms: ['Disney+'], imageUrl: ''),
-  ];
+      setState(() {
+        isLoading = false;
+      });
+
+      debugPrint('Erro ao carregar filmes: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    carregarFilmes();
+  }
 
   @override
   void dispose() {
@@ -195,7 +258,9 @@ class _MainPageState extends State<MainPage> {
           _buildNotificationAction(),
         ],
       ),
-      body: SingleChildScrollView(
+      body: isLoading ? const Center(
+          child: CircularProgressIndicator(),)
+        : SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -213,18 +278,9 @@ class _MainPageState extends State<MainPage> {
             const SizedBox(height: 16),
             _buildCarousel(),
             const SizedBox(height: 32),
-            _buildSectionTitle('Pra você'),
+            _buildSectionTitle('Populares'),
             const SizedBox(height: 16),
-            _buildHorizontalList(praVoce),
-            const SizedBox(height: 32),
-            _buildSectionTitle('Só na Netflix'),
-            const SizedBox(height: 16),
-            _buildHorizontalList(soNaNetflix),
-            const SizedBox(height: 32),
-            _buildSectionTitle('Só no Disney+'),
-            const SizedBox(height: 16),
-            _buildHorizontalList(soNoDisney),
-            const SizedBox(height: 40),
+            _buildHorizontalList(populares),
           ],
         ),
       ),

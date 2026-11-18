@@ -1,61 +1,54 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-/// Comunicação com as Cloud Functions responsáveis pela redefinição de senha.
-/// As funções do backend não são modificadas.
 class PasswordService {
-  PasswordService({FirebaseFunctions? functions})
-      : _functions = functions ??
-            FirebaseFunctions.instanceFor(region: 'southamerica-east1');
+  PasswordService({
+    FirebaseFunctions? functions,
+    FirebaseAuth? auth,
+  })  : _functions = functions ??
+            FirebaseFunctions.instanceFor(
+              region: 'southamerica-east1',
+            ),
+        _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFunctions _functions;
+  final FirebaseAuth _auth;
 
-  Future<String> validateEmail(String email) async {
+  Future<void> requestPasswordReset(String email) async {
+    final normalizedEmail = email.trim();
+
     try {
-      final callable = _functions.httpsCallable('resetPassword');
-      final result = await callable.call<Map<String, dynamic>>({
-        'email': email.trim(),
+      // 1. Valida o e-mail através da Cloud Function publicada.
+      await _functions.httpsCallable('resetPassword').call({
+        'email': normalizedEmail,
       });
 
-      final uid = result.data['uid'];
-      if (uid is! String || uid.isEmpty) {
-        throw Exception('Não foi possível identificar a conta.');
-      }
-
-      return uid;
+      // 2. Solicita ao Firebase Authentication o envio do link.
+      await _auth.sendPasswordResetEmail(
+        email: normalizedEmail,
+      );
     } on FirebaseFunctionsException catch (error) {
-      throw Exception(_messageFor(error));
+      throw Exception(
+        error.message ?? 'Não foi possível validar o e-mail.',
+      );
+    } on FirebaseAuthException catch (error) {
+      throw Exception(_messageForAuth(error));
     }
   }
 
-  Future<void> changePassword({
-    required String uid,
-    required String password,
-    required String confirmPassword,
-  }) async {
-    try {
-      final callable = _functions.httpsCallable('changePassword');
-      await callable.call({
-        'uid': uid,
-        'password': password,
-        'confirmPassword': confirmPassword,
-      });
-    } on FirebaseFunctionsException catch (error) {
-      throw Exception(_messageFor(error));
-    }
-  }
-
-  String _messageFor(FirebaseFunctionsException error) {
+  String _messageForAuth(FirebaseAuthException error) {
     switch (error.code) {
-      case 'invalid-argument':
-        return error.message ?? 'Verifique os dados informados.';
-      case 'not-found':
-        return 'Conta não encontrada.';
-      case 'unavailable':
-        return 'Serviço indisponível. Tente novamente.';
-      case 'deadline-exceeded':
-        return 'A solicitação demorou demais. Tente novamente.';
+      case 'invalid-email':
+        return 'O endereço de e-mail é inválido.';
+      case 'user-not-found':
+        return 'Nenhuma conta encontrada com este e-mail.';
+      case 'network-request-failed':
+        return 'Falha de conexão. Verifique sua internet.';
+      case 'too-many-requests':
+        return 'Muitas solicitações. Aguarde um pouco.';
       default:
-        return error.message ?? 'Não foi possível concluir a operação.';
+        return error.message ??
+            'Não foi possível enviar o e-mail de redefinição.';
     }
   }
 }

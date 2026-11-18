@@ -33,13 +33,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     setState(() => _isLoading = true);
     try {
-      final uid = await _passwordService.validateEmail(_emailController.text);
+      await _passwordService.requestPasswordReset(_emailController.text);
+
       if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResetPasswordPage(uid: uid),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Enviamos um link de redefinição para seu e-mail. '
+            'Verifique também a caixa de spam.',
+          ),
         ),
+      );
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (route) => false,
       );
     } catch (error) {
       if (!mounted) return;
@@ -72,7 +80,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
             const SizedBox(height: 32),
             PrimaryButton(
-              text: _isLoading ? 'Verificando...' : 'Enviar Solicitação',
+              text: _isLoading ? 'Enviando...' : 'Enviar Solicitação',
               onPressed: _isLoading ? null : _requestPasswordReset,
             ),
           ],
@@ -82,65 +90,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 }
 
-class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key, this.uid = ''});
-
-  final String uid;
-
-  @override
-  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
-}
-
-class _ResetPasswordPageState extends State<ResetPasswordPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _passwordService = PasswordService();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submitNewPassword() async {
-    if (!_formKey.currentState!.validate() || _isLoading) return;
-
-    if (widget.uid.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível identificar a conta. Solicite a redefinição novamente.')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      await _passwordService.changePassword(
-        uid: widget.uid,
-        password: _passwordController.text,
-        confirmPassword: _confirmPasswordController.text,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Senha atualizada com sucesso!')),
-      );
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.login,
-        (route) => false,
-      );
-    } catch (error) {
-      if (!mounted) return;
-      final message = error.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+/// Rota mantida por compatibilidade com routes.dart.
+/// A redefinição efetiva agora acontece pelo link hospedado pelo Firebase.
+class ResetPasswordPage extends StatelessWidget {
+  const ResetPasswordPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -148,82 +101,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       title: 'Redefinir Senha',
       showBackButton: true,
       topPadding: 80,
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AppTextField(
-  label: 'Nova senha',
-  controller: _passwordController,
-  obscureText: true,
-  textInputAction: TextInputAction.next,
-  validator: validatePassword,
-),
-
-const SizedBox(height: 12),
-
-Container(
-  padding: const EdgeInsets.all(12),
-  decoration: BoxDecoration(
-    border: Border.all(
-      color: Colors.white.withValues(alpha: 0.3),
-    ),
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Sua senha deve conter:',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
-        ),
-      ),
-      const SizedBox(height: 8),
-      const Text(
-        '• Entre 6 e 126 caracteres\n'
-        '• Pelo menos uma letra maiúscula\n'
-        '• Pelo menos uma letra minúscula\n'
-        '• Pelo menos um número\n'
-        '• Pelo menos um caractere especial\n'
-        '• Não pode conter espaços',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          height: 1.6,
-        ),
-      ),
-      const SizedBox(height: 6),
-      const Text(
-        r'Caracteres especiais aceitos: @#$%^&+=!*_?-',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
-        ),
-      ),
-    ],
-  ),
-),
-
-const SizedBox(height: 12),
-
-AppTextField(
-  label: 'Confirmar senha',
-              controller: _confirmPasswordController,
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              validator: validateConfirmPassword(_passwordController),
-            ),
-            const SizedBox(height: 32),
-            PrimaryButton(
-              text: _isLoading ? 'Redefinindo...' : 'Redefinir',
-              onPressed: _isLoading ? null : _submitNewPassword,
-            ),
-          ],
-        ),
+      child: const Text(
+        'Para redefinir sua senha, utilize o link enviado para seu e-mail.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white),
       ),
     );
   }

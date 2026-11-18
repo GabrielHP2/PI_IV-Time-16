@@ -10,9 +10,5 @@ export const ALLOWED_PROVIDERS = new Set([
     350,  // Apple TV+
     531,  // Paramount+
     283,  // Crunchyroll
-    11,   // MUBI
     227,  // Telecine
-    47,   // Looke
-    300,  // Pluto TV
-    2243, // Mercado Play
 ]);

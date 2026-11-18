@@ -1,6 +1,6 @@
 // Autor: Gabriel Henrique Pacagnelli Pagliato
 
-import { SimpleContentType } from "../mainpage/types/simpleContentType";
+import { SimpleContentType } from "../api/types/simpleContentType";
 
 export function parseSimpleContent(rawJson: any, resultsQuantity: number): SimpleContentType[] {
 

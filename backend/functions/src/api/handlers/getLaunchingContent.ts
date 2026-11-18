@@ -8,7 +8,7 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getLaunchingContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
-    if (request.auth) {
+    if (!request.auth) {
 
         logger.error("Error from getPopularContent: User unauthenticated");
         throw new HttpsError("unauthenticated", "Usuário não autenticado");
@@ -45,6 +45,8 @@ export const getLaunchingContent = onCall({secrets: [API_TOKEN]}, async (request
         return res.json();
     })
     .catch((err) => {
+
+        if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from getLaunchingContent: Something went wrong while fetching for movies in theatres - ${err}`);
         throw new HttpsError("unknown", "Algo deu errado ao buscar por lançamentos");

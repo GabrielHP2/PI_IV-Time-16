@@ -98,6 +98,74 @@ public class ConnectionHandler extends Thread {
                 HashMap<String, String> formattedBody = JsonParser.parse(json);
 
                 switch (formattedBody.get("operation")) {
+
+
+                    case "login" -> {
+
+                            try {
+
+                                LoginService loginService = new LoginService(
+                                    formattedBody.get("email"),
+                                    formattedBody.get("password")
+                                );
+
+                                if (loginService.isValid()) {
+
+                                    this.user.sendJson(
+                                        ResponseStatus.OK,
+                                        "Login data is valid"
+                                    );
+
+                                } else {
+
+                                    this.user.sendJson(
+                                        ResponseStatus.BAD_REQUEST,
+                                        "Invalid login data"
+                                    );
+                                }
+
+                            } catch (IllegalArgumentException err) {
+
+                                this.user.sendJson(
+                                    ResponseStatus.BAD_REQUEST,
+                                    err.getMessage()
+                                );
+                            }
+                        }
+                    case "register" -> {
+
+                        try {
+
+                            RegisterService registerService = new RegisterService(
+                                formattedBody.get("name"),
+                                formattedBody.get("email"),
+                                formattedBody.get("password"),
+                                formattedBody.get("phoneNumber")
+                            );
+
+                            if (registerService.isValid()) {
+
+                                this.user.sendJson(
+                                    ResponseStatus.OK,
+                                    "Registration data is valid"
+                                );
+
+                            } else {
+
+                                this.user.sendJson(
+                                    ResponseStatus.BAD_REQUEST,
+                                    "Invalid registration data"
+                                );
+                            }
+
+                        } catch (IllegalArgumentException err) {
+
+                            this.user.sendJson(
+                                ResponseStatus.BAD_REQUEST,
+                                err.getMessage()
+                            );
+                        }
+                    }
                     
                     case "reset" -> {
 

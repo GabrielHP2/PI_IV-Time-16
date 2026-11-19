@@ -46,16 +46,21 @@ public class ClientConnection {
         return jsonContent;
     }
 
-    public void sendJson(ResponseStatus responseCode, String responseContent) throws IOException, InvalidJsonContentException, IllegalArgumentException {
+    public void sendJson(ResponseStatus responseCode, String responseContent)
+        throws IOException, InvalidJsonContentException, IllegalArgumentException {
 
-        if (responseCode == null) throw new IllegalArgumentException("Response code is missing");
-        if (responseContent == null || responseContent.isBlank()) throw new InvalidJsonContentException("Response JSON content is missing");
+    if (responseCode == null)
+        throw new IllegalArgumentException("Response code is missing");
 
-        String json = JsonBuilder.buildJson(responseCode, responseContent);
+    if (responseContent == null || responseContent.isBlank())
+        throw new InvalidJsonContentException("Response JSON content is missing");
 
-        this.bufferedWriter.write(json);
-        this.bufferedWriter.flush();
-    }
+    String json = JsonBuilder.buildJson(responseCode, responseContent);
+
+    this.bufferedWriter.write(json);
+    this.bufferedWriter.newLine();
+    this.bufferedWriter.flush();
+}
 
     public void shutDown() throws IOException {
 

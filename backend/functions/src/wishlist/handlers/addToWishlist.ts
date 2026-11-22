@@ -10,6 +10,8 @@ interface WishlistDocument {
     contentId: number;
     category: ContentCategory;
     createdAt: Date;
+    banner_path: string;
+    poster_path: string;
 }
 
 export const addToWishlist = onCall(
@@ -50,6 +52,21 @@ export const addToWishlist = onCall(
                 "Categoria do conteúdo inválida"
             );
         }
+        const bannerPath = data.banner_path;
+        const posterPath = data.poster_path;
+
+        if (
+            typeof bannerPath !== "string" ||
+            !bannerPath.trim() ||
+            typeof posterPath !== "string" ||
+            !posterPath.trim()
+        ) {
+
+            throw new HttpsError(
+                "invalid-argument",
+                "Caminhos das imagens são obrigatórios"
+            );
+        }
 
         const userId = request.auth.uid;
 
@@ -68,6 +85,10 @@ export const addToWishlist = onCall(
                     category
                 },
                 {
+                    $set: {
+                        banner_path: bannerPath.trim(),
+                        poster_path: posterPath.trim()
+                    },
                     $setOnInsert: {
                         userId,
                         contentId,
@@ -79,6 +100,7 @@ export const addToWishlist = onCall(
                     upsert: true
                 }
             );
+            
 
             const added = result.upsertedCount === 1;
 

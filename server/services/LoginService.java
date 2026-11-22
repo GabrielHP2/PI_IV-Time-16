@@ -1,3 +1,5 @@
+// Autor: Gabriel Batista Bastos
+
 package services;
 
 public class LoginService {
@@ -5,6 +7,7 @@ public class LoginService {
     private String email;
     private String password;
 
+    // Construtor da classe LoginService que recebe o email e a senha do usuário
     public LoginService(String email, String password)
             throws IllegalArgumentException {
 
@@ -26,10 +29,12 @@ public class LoginService {
         return password;
     }
 
+    // Verifica se o email é valido usando o serviço ResetPasswordService 
     private boolean isEmailValid() {
         return ResetPasswordService.isValid(this.email);
     }
 
+    // Verifica se a senha é valida usando o serviço ChangePasswordService
     private boolean isPasswordValid() {
         return ChangePasswordService.isValid(
             this.password,

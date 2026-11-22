@@ -1,4 +1,5 @@
-// Autor: Gabriel Henrique Pacagnelli Pagliato
+// Autores: Gabriel Henrique Pacagnelli Pagliato
+//          Gabriel Batista Bastos
 
 package src;
 
@@ -35,6 +36,7 @@ public class ConnectionHandler extends Thread {
         this.connectedUsers = connectedUsers;
     }
     
+    // Inicia o loop de comunicação com o cliente, recebendo e processando os JSONs enviados
     @Override 
     public void run() {
 
@@ -43,6 +45,7 @@ public class ConnectionHandler extends Thread {
 
         try {
 
+            // Cria a stream de escrita para enviar respostas ao cliente
             bufferedWriter = new BufferedWriter(
                 new OutputStreamWriter(this.socket.getOutputStream(), StandardCharsets.UTF_8));
 
@@ -53,11 +56,14 @@ public class ConnectionHandler extends Thread {
 
         try {
             
+            // Cria a stream de leitura para receber requisições do cliente
             bufferedReader = new BufferedReader(
                 new InputStreamReader(this.socket.getInputStream(), StandardCharsets.UTF_8));
-                            
+                
+            // Cria o objeto que representa a conexão com o cliente
             this.user = new ClientConnection(this.socket, bufferedReader, bufferedWriter);
 
+            // Adiciona o usuário à lista de usuários conectados
             synchronized(this.connectedUsers) {
                 
                 this.connectedUsers.add(this.user);
@@ -71,6 +77,7 @@ public class ConnectionHandler extends Thread {
 
             try {
 
+                // Fecha a conexão com o cliente, caso a criação do stream de leitura falhe
                 bufferedWriter.close();
 
             } catch (IOException e) {
@@ -88,50 +95,56 @@ public class ConnectionHandler extends Thread {
             err.printStackTrace();
         }
         
-        // WIP
         try {
             
+            // Enquanto a conexão com o cliente estiver ativa, recebe e processa os JSONs enviados
             while (true) {
 
+                // Recebe o JSON enviado pelo cliente
                 String json = this.user.receiveJson();
 
+                // Formata o JSON recebido em um HashMap
+                // separando a operação e os campos de dados
                 HashMap<String, String> formattedBody = JsonParser.parse(json);
 
+                // Chama o método correto de acordo com a operação recebida
                 switch (formattedBody.get("operation")) {
 
-
+                    // Valida os dados de login recebidos e envia uma resposta ao cliente
                     case "login" -> {
 
-                            try {
+                        try {
 
-                                LoginService loginService = new LoginService(
-                                    formattedBody.get("email"),
-                                    formattedBody.get("password")
+                            LoginService loginService = new LoginService(
+                                formattedBody.get("email"),
+                                formattedBody.get("password")
+                            );
+
+                            if (loginService.isValid()) {
+
+                                this.user.sendJson(
+                                    ResponseStatus.OK,
+                                    "Login data is valid"
                                 );
 
-                                if (loginService.isValid()) {
-
-                                    this.user.sendJson(
-                                        ResponseStatus.OK,
-                                        "Login data is valid"
-                                    );
-
-                                } else {
-
-                                    this.user.sendJson(
-                                        ResponseStatus.BAD_REQUEST,
-                                        "Invalid login data"
-                                    );
-                                }
-
-                            } catch (IllegalArgumentException err) {
+                            } else {
 
                                 this.user.sendJson(
                                     ResponseStatus.BAD_REQUEST,
-                                    err.getMessage()
+                                    "Invalid login data"
                                 );
                             }
+
+                        } catch (IllegalArgumentException err) {
+
+                            this.user.sendJson(
+                                ResponseStatus.BAD_REQUEST,
+                                err.getMessage()
+                            );
                         }
+                    }
+
+                    // Valida os dados de registro recebidos e envia uma resposta ao cliente
                     case "register" -> {
 
                         try {
@@ -167,6 +180,7 @@ public class ConnectionHandler extends Thread {
                         }
                     }
                     
+                    // Valida os dados de redefinição de senha recebidos e envia uma resposta ao cliente
                     case "reset" -> {
 
                         if (ResetPasswordService.isValid(formattedBody.get("email"))) {
@@ -177,6 +191,7 @@ public class ConnectionHandler extends Thread {
                         else this.user.sendJson(ResponseStatus.BAD_REQUEST, "Invalid email");
                     }
 
+                    // Valida os dados de alteração de senha recebidos e envia uma resposta ao cliente
                     case "change" -> {
                         
                         if (ChangePasswordService.isValid(formattedBody.get("password"), formattedBody.get("confirmPassword"))) {
@@ -187,14 +202,18 @@ public class ConnectionHandler extends Thread {
                         else this.user.sendJson(ResponseStatus.BAD_REQUEST, "Invalid password");
                     }
 
+                    // Responde com "Pong" ao receber um "ping" do cliente
                     case "ping" -> this.user.sendJson(ResponseStatus.OK ,"Pong");
 
+                    // Encerra a conexão com o cliente ao receber um "close"
                     case "close" -> {
                         
+                        // Envia uma resposta de aceitação ao cliente antes de encerrar a conexão
                         this.user.sendJson(ResponseStatus.ACCEPTED ,"Connection closed");
 
                         this.user.shutDown();
 
+                        // Remove o usuário da lista de usuários conectados
                         synchronized(this.connectedUsers) {
 
                             this.connectedUsers.remove(this.user);

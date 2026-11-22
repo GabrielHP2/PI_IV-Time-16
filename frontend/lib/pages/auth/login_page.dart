@@ -9,6 +9,7 @@ import '../../components/widgets/app_text_field.dart';
 import '../../components/widgets/auth_scaffold.dart';
 import '../../components/widgets/link_text.dart';
 import '../../components/widgets/primary_button.dart';
+import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,6 +22,9 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,22 +33,48 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _login() async {
+    if (_isLoading || !_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-
       topPadding: 40,
-
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-        
           children: [
             Center(
               child: Image.asset(kLogoAsset, width: 100, fit: BoxFit.contain),
             ),
-        
             const SizedBox(height: 40),
             AppTextField(
               label: 'Email',
@@ -53,7 +83,6 @@ class _LoginPageState extends State<LoginPage> {
               textInputAction: TextInputAction.next,
               validator: validateRequired,
             ),
-        
             const SizedBox(height: 12),
             AppTextField(
               label: 'Senha',
@@ -62,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
               textInputAction: TextInputAction.done,
               validator: validatePassword,
             ),
-        
             const SizedBox(height: 20),
             Center(
               child: LinkText(
@@ -71,17 +99,11 @@ class _LoginPageState extends State<LoginPage> {
                     Navigator.pushNamed(context, AppRoutes.forgotPassword),
               ),
             ),
-        
             const SizedBox(height: 20),
             PrimaryButton(
-              text: 'Entrar',
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  Navigator.pushNamed(context, AppRoutes.home);
-                }
-              },
+              text: _isLoading ? 'Entrando...' : 'Entrar',
+              onPressed: _isLoading ? null : _login,
             ),
-        
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -90,12 +112,12 @@ class _LoginPageState extends State<LoginPage> {
                   'Não tem uma conta? ',
                   style: TextStyle(color: AppColors.onDark, fontSize: 13),
                 ),
-          
                 LinkText(
                   text: 'Registre-se',
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.register),
                 ),
-              ]
+              ],
             ),
           ],
         ),

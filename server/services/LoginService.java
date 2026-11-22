@@ -1,3 +1,5 @@
+// Autor: Gabriel Batista Bastos
+
 package services;
 
 public class LoginService {

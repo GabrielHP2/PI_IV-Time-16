@@ -15,13 +15,13 @@ export const changePassword = onCall(async (request) => {
     if (!uid) {
 
         logger.error("Error from changePassword: Failed to identify the user");
-        throw new HttpsError("internal", "Falha ao identificar o usuÃ¡rio");
+        throw new HttpsError("internal", "Falha ao identificar o usuário");
     }
 
     if (!password || !confirmPassword) {
 
         logger.error("Error from changePassword: Fields missing");
-        throw new HttpsError("invalid-argument", "Todos os campos sÃ£o obrigatÃ³rios");
+        throw new HttpsError("invalid-argument", "Todos os campos são obrigatórios");
     }
 
     // Monta os dados que serão enviados ao servidor de autenticação
@@ -42,7 +42,7 @@ export const changePassword = onCall(async (request) => {
         if (serverResponse.code === StatusType.BAD_REQUEST) {
 
             logger.error(`Error from changePassword: Invalid password or confirm password- ${serverResponse.message}`);
-            throw new HttpsError("invalid-argument", "Senha ou confirmar senha invÃ¡lido");
+            throw new HttpsError("invalid-argument", "Senha ou confirmar senha inválidos");
         }
 
         if (serverResponse.code === StatusType.METHOD_NOT_ALLOWED || serverResponse.code === StatusType.INTERNAL_SERVER_ERROR) {
@@ -55,7 +55,7 @@ export const changePassword = onCall(async (request) => {
         if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from changePassword: Something went wrong - ${err}`);
-        throw new HttpsError("internal", "Falha ao processar requisiÃ§Ã£o de troca de senha");
+        throw new HttpsError("internal", "Falha ao processar requisição de troca de senha");
     }
 
 
@@ -82,6 +82,6 @@ export const changePassword = onCall(async (request) => {
         if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from changePassword: Something went wrong - ${err}`);
-        throw new HttpsError("internal", "Falha ao processar requisiÃ§Ã£o de trocar a senha");
+        throw new HttpsError("internal", "Falha ao processar requisição de trocar a senha");
     }
 });

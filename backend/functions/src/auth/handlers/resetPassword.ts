@@ -36,7 +36,7 @@ export const resetPassword = onCall(async (request) => {
         if (serverResponse.code === StatusType.BAD_REQUEST) {
 
             logger.error(`Error from resetPassword: Invalid email provided - ${serverResponse.message}`);
-            throw new HttpsError("invalid-argument", "Email invÃ¡lido");
+            throw new HttpsError("invalid-argument", "Email inválido");
         }
 
         if (serverResponse.code === StatusType.METHOD_NOT_ALLOWED || serverResponse.code === StatusType.INTERNAL_SERVER_ERROR) {
@@ -49,7 +49,7 @@ export const resetPassword = onCall(async (request) => {
         if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from resetPassword: Something went wrong - ${err}`);
-        throw new HttpsError("internal", "Falha ao processar requisiÃ§Ã£o de redefiniÃ§Ã£o");
+        throw new HttpsError("internal", "Falha ao processar requisição de redefinição");
     }
 
 
@@ -78,6 +78,6 @@ export const resetPassword = onCall(async (request) => {
         if (err instanceof HttpsError) throw err;
 
         logger.error(`Error from resetPassword: Something went wrong - ${err}`);
-        throw new HttpsError("internal", "Falha ao processar requisiÃ§Ã£o de redefiniÃ§Ã£o");
+        throw new HttpsError("internal", "Falha ao processar requisição de redefinição");
     }
 });

@@ -52,7 +52,6 @@ public class Server {
         Scanner scanner = new Scanner(System.in);
         String command = "";
         
-        // WIP
         while (true) {
             
             while (true) {

@@ -88,7 +88,6 @@ public class ConnectionHandler extends Thread {
             err.printStackTrace();
         }
         
-        // WIP
         try {
             
             while (true) {
@@ -102,36 +101,37 @@ public class ConnectionHandler extends Thread {
 
                     case "login" -> {
 
-                            try {
+                        try {
 
-                                LoginService loginService = new LoginService(
-                                    formattedBody.get("email"),
-                                    formattedBody.get("password")
+                            LoginService loginService = new LoginService(
+                                formattedBody.get("email"),
+                                formattedBody.get("password")
+                            );
+
+                            if (loginService.isValid()) {
+
+                                this.user.sendJson(
+                                    ResponseStatus.OK,
+                                    "Login data is valid"
                                 );
 
-                                if (loginService.isValid()) {
-
-                                    this.user.sendJson(
-                                        ResponseStatus.OK,
-                                        "Login data is valid"
-                                    );
-
-                                } else {
-
-                                    this.user.sendJson(
-                                        ResponseStatus.BAD_REQUEST,
-                                        "Invalid login data"
-                                    );
-                                }
-
-                            } catch (IllegalArgumentException err) {
+                            } else {
 
                                 this.user.sendJson(
                                     ResponseStatus.BAD_REQUEST,
-                                    err.getMessage()
+                                    "Invalid login data"
                                 );
                             }
+
+                        } catch (IllegalArgumentException err) {
+
+                            this.user.sendJson(
+                                ResponseStatus.BAD_REQUEST,
+                                err.getMessage()
+                            );
                         }
+                    }
+                        
                     case "register" -> {
 
                         try {

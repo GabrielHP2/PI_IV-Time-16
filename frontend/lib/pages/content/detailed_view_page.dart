@@ -1,4 +1,5 @@
 // Feito por Felipe Batista Bastos - 25005337
+// Correções por Luis Felipe Pontes Mita RA - 25018740
 
 import 'package:flutter/material.dart';
 
@@ -10,32 +11,24 @@ import '../../routes.dart';
 
 class ContentDetail {
   const ContentDetail({
+    required this.id,
     required this.title,
     required this.synopsis,
     required this.releaseDate,
     required this.rating,
     required this.platforms,
-    required this.similarTitles,
+    this.similar = const [],
     this.genre = 'Não informado',
   });
 
+  final int id;
   final String title;
   final String synopsis;
   final String releaseDate;
   final double rating;
   final List<String> platforms;
-  final List<String> similarTitles;
+  final List<Movie> similar;
   final String genre;
-
-  static const example = ContentDetail(
-    title: 'Filme',
-    synopsis: 'Uma breve sinopse do filme ou da série selecionada.',
-    releaseDate: '15/07/2016',
-    rating: 4.5,
-    genre: 'Drama',
-    platforms: ['Netflix'],
-    similarTitles: ['Filme 1', 'Filme 2', 'Filme 3'],
-  );
 }
 
 class DetailedViewPage extends StatefulWidget {
@@ -60,19 +53,20 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
     if (_contentInitialized) return;
 
     if (widget.content != null) {
-      _content = widget.content!;
+      final c = widget.content!;
+      _content = c;
 
-      // Compatibilidade com chamadas que enviam ContentDetail diretamente.
-      // Quando a tela recebe Movie pela rota, preservamos o ID original.
       _movie = Movie(
-        id: 'content-${widget.content!.title}',
-        title: widget.content!.title,
-        synopsis: widget.content!.synopsis,
-        releaseDate: widget.content!.releaseDate,
-        rating: widget.content!.rating,
-        genre: widget.content!.genre,
-        platforms: widget.content!.platforms,
-        imageUrl: '',
+        id: c.id,
+        banner_path: '',
+        poster_path: '',
+        title: c.title,
+        synopsis: c.synopsis,
+        release_date: c.releaseDate,
+        rating: c.rating,
+        genre: c.genre == 'Não informado' ? [] : [c.genre],
+        platform: c.platforms,
+        similar: c.similar,
       );
     } else {
       final args = ModalRoute.of(context)?.settings.arguments;
@@ -80,18 +74,17 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
       if (args is Movie) {
         _movie = args;
         _content = ContentDetail(
+          id: args.id,
           title: args.title,
-          synopsis: args.synopsis,
-          releaseDate: args.releaseDate,
+          synopsis: args.synopsis ?? 'Sinopse não disponível.',
+          releaseDate: args.release_date ?? 'Não informado',
           rating: args.rating,
-          genre: args.genre,
-          platforms: args.platforms,
-          similarTitles: const [],
+          genre: args.genre.isEmpty ? 'Não informado' : args.genre.join(', '),
+          platforms: args.platform ?? const [],
+          similar: args.similar,
         );
-      } else {
-        _content = ContentDetail.example;
       }
-    }
+}
 
     // O marcador começa de acordo com o estado real da lista compartilhada.
     if (_movie != null) {
@@ -276,26 +269,18 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
             height: 88,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: _content.similarTitles.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemCount: _content.similar.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final title = _content.similarTitles[index];
+                final similar = _content.similar[index];
 
                 return ContentCard(
-                  movie: Movie(
-                    id: 'similar-$index',
-                    title: title,
-                    synopsis: '',
-                    releaseDate: '',
-                    rating: 0.0,
-                    genre: '',
-                    platforms: const [],
-                    imageUrl: '',
+                  movie: similar,
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.detailedView,
+                    arguments: similar,
                   ),
-                  onTap: () {
-                    // A navegação para o conteúdo similar
-                    // poderá ser adicionada quando houver seus dados.
-                  },
                 );
               },
             ),

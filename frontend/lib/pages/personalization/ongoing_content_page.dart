@@ -1,12 +1,27 @@
 // Feito por Felipe Batista Bastos - 25005337
+// Correções por Luis Felipe Pontes Mita RA - 25018740
 
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../../components/widgets/primary_button.dart';
 import '../../models/movie_model.dart';
 import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 import '../../theme/app_theme.dart';
+
+Future<List<Movie>> getCatalogContent(int page) async {
+  final callable =
+      FirebaseFunctions.instance.httpsCallable('getRandomContent'); // ajuste o nome
+  final response = await callable.call({'page': page});
+
+  final data = Map<String, dynamic>.from(response.data);
+  final List<dynamic> jsonData = data['results'];
+
+  return jsonData
+      .map((json) => Movie.fromJson(Map<String, dynamic>.from(json)))
+      .toList();
+}
 
 class OngoingContentPage extends StatefulWidget {
   const OngoingContentPage({super.key});
@@ -19,136 +34,88 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Conteúdo provisório para montar a interface enquanto o catálogo não é
-  // carregado pelo backend. Os dados seguem o mesmo modelo Movie do projeto.
-  static const List<Movie> _availableContents = [
-    Movie(
-      id: 'ongoing-1',
-      title: 'Conteúdo 1',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-2',
-      title: 'Conteúdo 2',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-3',
-      title: 'Conteúdo 3',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-4',
-      title: 'Conteúdo 4',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-5',
-      title: 'Conteúdo 5',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-6',
-      title: 'Conteúdo 6',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-7',
-      title: 'Conteúdo 7',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-8',
-      title: 'Conteúdo 8',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-9',
-      title: 'Conteúdo 9',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-10',
-      title: 'Conteúdo 10',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-11',
-      title: 'Conteúdo 11',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'ongoing-12',
-      title: 'Conteúdo 12',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-  ];
+final ScrollController _scrollController = ScrollController();
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+List<Movie> _availableContents = [];
+bool _isLoading = true;
+bool _isLoadingMore = false;
+bool _hasMore = true;
+String? _error;
+int _page = 1;
+
+@override
+void initState() {
+  super.initState();
+  _scrollController.addListener(_onScroll);
+  _loadContents();
+}
+
+@override
+void dispose() {
+  _scrollController.dispose();
+  _searchController.dispose();
+  super.dispose();
+}
+
+void _onScroll() {
+  if (_scrollController.position.pixels >=
+      _scrollController.position.maxScrollExtent - 200) {
+    _loadMore();
   }
+}
+
+Future<void> _loadContents() async {
+  setState(() {
+    _isLoading = true;
+    _error = null;
+  });
+
+  try {
+    final movies = await getCatalogContent(1);
+    if (!mounted) return;
+
+    setState(() {
+      _availableContents = movies;
+      _page = 1;
+      _hasMore = movies.isNotEmpty;
+      _isLoading = false;
+    });
+  } catch (e) {
+    if (!mounted) return;
+    debugPrint('Erro ao carregar conteúdos: $e');
+
+    setState(() {
+      _error = 'Não foi possível carregar os conteúdos.';
+      _isLoading = false;
+    });
+  }
+}
+
+Future<void> _loadMore() async {
+  if (_isLoading || _isLoadingMore || !_hasMore || _error != null) return;
+
+  setState(() => _isLoadingMore = true);
+
+  try {
+    final movies = await getCatalogContent(_page + 1);
+    if (!mounted) return;
+
+    final existingIds = _availableContents.map((m) => m.id).toSet();
+    final newMovies =
+        movies.where((m) => !existingIds.contains(m.id)).toList();
+
+    setState(() {
+      _page++;
+      _availableContents = [..._availableContents, ...newMovies];
+      _hasMore = newMovies.isNotEmpty;
+      _isLoadingMore = false;
+    });
+  } catch (e) {
+    if (!mounted) return;
+    debugPrint('Erro ao carregar mais conteúdos: $e');
+    setState(() => _isLoadingMore = false);
+  }
+}
 
   void _continue() {
     Navigator.pushNamed(context, AppRoutes.desiredContent);
@@ -233,39 +200,70 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
               ),
             ),
             Expanded(
-              child: ValueListenableBuilder<List<Movie>>(
-                valueListenable: PersonalizationRepository.ongoingContents,
-                builder: (context, selectedContents, child) {
-                  if (filteredContents.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Nenhum conteúdo encontrado.',
-                        style: TextStyle(color: AppColors.onDark),
+              child: Builder(
+                builder: (context) {
+                  if (_isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (_error != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error!,
+                            style: const TextStyle(color: AppColors.onDark),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _loadContents,
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
                       ),
                     );
                   }
 
-                  return GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(22, 2, 22, 12),
-                    itemCount: filteredContents.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.72,
-                    ),
-                    itemBuilder: (context, index) {
-                      final movie = filteredContents[index];
-                      final isSelected = selectedContents.any(
-                        (item) => item.id == movie.id,
-                      );
+                  return ValueListenableBuilder<List<Movie>>(
+                    valueListenable: PersonalizationRepository.ongoingContents,
+                    builder: (context, selectedContents, child) {
+                      if (filteredContents.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Nenhum conteúdo encontrado.',
+                            style: TextStyle(color: AppColors.onDark),
+                          ),
+                        );
+                      }
 
-                      return _OngoingContentCard(
-                        title: movie.title,
-                        isSelected: isSelected,
-                        onTap: () {
-                          PersonalizationRepository.toggleOngoingContent(movie);
+                      return GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(22, 2, 22, 12),
+                        itemCount: filteredContents.length + (_isLoadingMore ? 1 : 0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.72,
+                        ),
+                        itemBuilder: (context, index) {
+                          if (index >= filteredContents.length) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          final movie = filteredContents[index];
+                          final isSelected =
+                            selectedContents.any((item) => item.id == movie.id);
+
+                          return _OngoingContentCard(
+                            title: movie.title,
+                            poster_path: movie.poster_path,
+                            isSelected: isSelected,
+                            onTap: () {
+                              PersonalizationRepository.toggleOngoingContent(movie);
+                            },
+                          );
                         },
                       );
                     },
@@ -311,11 +309,13 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
 class _OngoingContentCard extends StatelessWidget {
   const _OngoingContentCard({
     required this.title,
+    required this.poster_path,
     required this.isSelected,
     required this.onTap,
   });
 
   final String title;
+  final String poster_path;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -340,6 +340,18 @@ class _OngoingContentCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      poster_path,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.movie_outlined, color: Colors.white54),
+                      ),
+                    ),
+                  ),
+                ),
                 if (isSelected)
                   const Positioned(
                     top: 7,

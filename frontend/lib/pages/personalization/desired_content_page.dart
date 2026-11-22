@@ -1,7 +1,9 @@
 // Feito por Felipe Batista Bastos - 25005337
+// Correções por Luis Felipe Pontes Mita RA - 25018740
 
 import 'package:flutter/material.dart';
 
+import '../../repositories/content_repository.dart';
 import '../../components/widgets/primary_button.dart';
 import '../../models/movie_model.dart';
 import '../../repositories/personalization_repository.dart';
@@ -17,138 +19,91 @@ class DesiredContentPage extends StatefulWidget {
 
 class _DesiredContentPageState extends State<DesiredContentPage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
   String _searchQuery = '';
 
-  // Conteúdo provisório até a integração com o catálogo/backend.
-  // Os IDs são diferentes dos usados na tela de conteúdos em andamento,
-  // pois as duas seleções representam informações distintas.
-  static const List<Movie> _availableContents = [
-    Movie(
-      id: 'desired-1',
-      title: 'Conteúdo 1',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-2',
-      title: 'Conteúdo 2',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-3',
-      title: 'Conteúdo 3',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-4',
-      title: 'Conteúdo 4',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-5',
-      title: 'Conteúdo 5',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-6',
-      title: 'Conteúdo 6',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-7',
-      title: 'Conteúdo 7',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-8',
-      title: 'Conteúdo 8',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-9',
-      title: 'Conteúdo 9',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-10',
-      title: 'Conteúdo 10',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-11',
-      title: 'Conteúdo 11',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-    Movie(
-      id: 'desired-12',
-      title: 'Conteúdo 12',
-      synopsis: '',
-      releaseDate: '',
-      rating: 0,
-      genre: 'Não informado',
-      platforms: [],
-      imageUrl: '',
-    ),
-  ];
+  List<Movie> _availableContents = [];
+  bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  String? _error;
+  int _page = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _loadContents();
+  }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadContents() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final movies = await ContentRepository.getCatalogContent(1);
+      if (!mounted) return;
+
+      setState(() {
+        _availableContents = movies;
+        _page = 1;
+        _hasMore = movies.isNotEmpty;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Erro ao carregar conteúdos: $e');
+
+      setState(() {
+        _error = 'Não foi possível carregar os conteúdos.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoading || _isLoadingMore || !_hasMore || _error != null) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final movies = await ContentRepository.getCatalogContent(_page + 1);
+      if (!mounted) return;
+
+      final existingIds = _availableContents.map((m) => m.id).toSet();
+      final newMovies =
+        movies.where((m) => !existingIds.contains(m.id)).toList();
+
+      setState(() {
+        _page++;
+        _availableContents = [..._availableContents, ...newMovies];
+        _hasMore = newMovies.isNotEmpty;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Erro ao carregar mais conteúdos: $e');
+      setState(() => _isLoadingMore = false);
+    }
   }
 
   void _continue() {
@@ -234,39 +189,70 @@ class _DesiredContentPageState extends State<DesiredContentPage> {
               ),
             ),
             Expanded(
-              child: ValueListenableBuilder<List<Movie>>(
-                valueListenable: PersonalizationRepository.desiredContents,
-                builder: (context, selectedContents, child) {
-                  if (filteredContents.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Nenhum conteúdo encontrado.',
-                        style: TextStyle(color: AppColors.onDark),
+              child: Builder(
+                builder: (context) {
+                  if (_isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (_error != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _error!,
+                            style: const TextStyle(color: AppColors.onDark),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _loadContents,
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
                       ),
                     );
                   }
 
-                  return GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(22, 2, 22, 12),
-                    itemCount: filteredContents.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.72,
-                    ),
-                    itemBuilder: (context, index) {
-                      final movie = filteredContents[index];
-                      final isSelected = selectedContents.any(
-                        (item) => item.id == movie.id,
-                      );
+                  return ValueListenableBuilder<List<Movie>>(
+                    valueListenable: PersonalizationRepository.desiredContents,
+                    builder: (context, selectedContents, child) {
+                      if (filteredContents.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Nenhum conteúdo encontrado.',
+                            style: TextStyle(color: AppColors.onDark),
+                          ),
+                        );
+                      }
 
-                      return _DesiredContentCard(
-                        title: movie.title,
-                        isSelected: isSelected,
-                        onTap: () {
-                          PersonalizationRepository.toggleDesiredContent(movie);
+                      return GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(22, 2, 22, 12),
+                        itemCount: filteredContents.length + (_isLoadingMore ? 1 : 0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.72,
+                        ),
+                        itemBuilder: (context, index) {
+                          if (index >= filteredContents.length) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          final movie = filteredContents[index];
+                          final isSelected =
+                              selectedContents.any((item) => item.id == movie.id);
+
+                          return _DesiredContentCard(
+                            title: movie.title,
+                            poster_path: movie.poster_path,
+                            isSelected: isSelected,
+                            onTap: () {
+                              PersonalizationRepository.toggleDesiredContent(movie);
+                            },
+                          );
                         },
                       );
                     },
@@ -312,11 +298,13 @@ class _DesiredContentPageState extends State<DesiredContentPage> {
 class _DesiredContentCard extends StatelessWidget {
   const _DesiredContentCard({
     required this.title,
+    required this.poster_path,
     required this.isSelected,
     required this.onTap,
   });
 
   final String title;
+  final String poster_path;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -342,6 +330,18 @@ class _DesiredContentCard extends StatelessWidget {
             child: Stack(
               children: [
                 if (isSelected)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        poster_path,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.movie_outlined, color: Colors.white54),
+                        ),
+                      ),
+                    ),
+                  ),
                   const Positioned(
                     top: 7,
                     right: 7,

@@ -1,4 +1,5 @@
 // Feito por Felipe Batista Bastos - 25005337
+// Correções por Luis Felipe Pontes Mita RA - 25018740
 
 import 'package:flutter/foundation.dart';
 
@@ -58,7 +59,7 @@ class PersonalizationRepository {
     }
   }
 
-  static bool containsOngoingContent(String movieId) {
+  static bool containsOngoingContent(int movieId) {
     return ongoingContents.value.any((movie) => movie.id == movieId);
   }
 
@@ -74,7 +75,7 @@ class PersonalizationRepository {
     }
   }
 
-  static bool containsDesiredContent(String movieId) {
+  static bool containsDesiredContent(int movieId) {
     return desiredContents.value.any((movie) => movie.id == movieId);
   }
 

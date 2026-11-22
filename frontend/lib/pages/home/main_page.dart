@@ -1,5 +1,5 @@
-
 // Adições e modificações por Felipe Batista Bastos - 25005337
+// Correções por Luis Felipe Pontes Mita RA - 25018740
 
 import 'dart:math' as math;
 
@@ -49,26 +49,6 @@ Future<List<Movie>> getRandomContent(int page) async {
   return randomContent;
 }
 
-class Movie {
-  final int id;
-  final String banner_path;
-  final String poster_path;
-
-  Movie ({
-    required this.id,
-    required this.banner_path,
-    required this.poster_path,
-  });
-
-  factory Movie.fromJson(Map<String, dynamic> json) {
-    return Movie(
-      id: json['id'],
-      banner_path: json['banner_path'],
-      poster_path: json['poster_path'],
-    );
-  }
-}
-
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -86,10 +66,10 @@ class _MainPageState extends State<MainPage> {
   
   Future<void> carregarFilmes() async {
     try {
-      final resultados = await Future.wait([
+      final resultados = await Future.wait<List<Movie>>([
         getLaunchingContent(1),
-      getRandomContent(1),
-    ]);
+        getRandomContent(1),
+      ]);
 
       if (!mounted) return;
 

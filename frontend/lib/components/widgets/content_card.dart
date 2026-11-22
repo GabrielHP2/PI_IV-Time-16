@@ -1,3 +1,5 @@
+//Feito por Luis Felipe Pontes Mita RA - 25018740
+
 import 'package:flutter/material.dart';
 import '../../models/movie_model.dart';
 
@@ -24,8 +26,8 @@ class ContentCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
-              child: movie.imageUrl.isNotEmpty
-                  ? Image.network(movie.imageUrl, fit: BoxFit.cover, width: double.infinity)
+              child: movie.banner_path.isNotEmpty
+                  ? Image.network(movie.banner_path, fit: BoxFit.cover, width: double.infinity)
                   : Container(
                       color: colors.primary,
                       child: Icon(Icons.movie, color: colors.onPrimary, size: 32),

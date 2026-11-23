@@ -79,8 +79,16 @@ export const setSubscriptionPlan = onCall({secrets: [API_TOKEN, mongoUri]}, asyn
     const currentContentList = currentContent as selectedContentType[];
     const desiredContentList = desiredContent as selectedContentType[];
     
-    // Faz um fetch para obter as plataformas em que cada conteúdo está disponível
-    const currentPlatforms = await getAvailablePlatforms(currentContentList);
+    // Faz um fetch para obter as plataformas de cada conteúdo em andamento
+    const currentPlatforms: number[][] = await Promise.all(
+        currentContentList.map(async (content) => {
+
+            const platforms = await getAvailablePlatforms([content]);
+            return Array.from(platforms.keys());
+        }
+    ));
+
+    const currentCategories: ("movie" | "tv")[] = currentContentList.map((content) => content.category);
 
     // Faz um fetch pra cada conteúdo, separando individualmente no 
     // array as plataformas que o conteúdo esta disponível
@@ -97,7 +105,7 @@ export const setSubscriptionPlan = onCall({secrets: [API_TOKEN, mongoUri]}, asyn
 
     // Gera o planejamento de assinatura
     const subscriptionPlan: PlanType = subscriptionPlanner(
-        currentPlatforms, desiredPlatforms, 
+        currentPlatforms, currentCategories, desiredPlatforms,
         platformsPrice, supportedPlatforms, 
         currentExpense, desiredExpense
     );

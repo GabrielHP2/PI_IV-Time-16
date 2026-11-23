@@ -1,4 +1,4 @@
-// Autor: Gabriel Henrique Pacagnelli Pagliato
+﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { onCall, HttpsError } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
@@ -7,6 +7,7 @@ import { OperationType } from "../types/operationType";
 import { StatusType } from "../types/statusType";
 import { getAuth } from "firebase-admin/auth";
 
+// Confere o e-mail com o servidor e procura a conta correspondente no Firebase Auth
 export const resetPassword = onCall(async (request) => {
 
     const { email: userEmail } = request.data ?? {};
@@ -17,10 +18,12 @@ export const resetPassword = onCall(async (request) => {
         throw new HttpsError("invalid-argument", "Email ausente");
     }
 
+    // Monta o dado que será enviado ao servidor
     const requestContent = {email: userEmail};
 
     try {   
 
+        // Pede ao servidor que valide o e-mail para redefinição
         const serverResponse = await serverConnection(OperationType.RESET, requestContent);
 
         if (!serverResponse) {
@@ -52,6 +55,7 @@ export const resetPassword = onCall(async (request) => {
 
     try {
 
+        // Depois da validação, procura no Firebase a conta ligada ao e-mail e retorna o uid
         const userId = await getAuth().getUserByEmail(userEmail)
         .then((res) => {
 

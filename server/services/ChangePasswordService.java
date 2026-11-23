@@ -11,6 +11,7 @@ public class ChangePasswordService {
         return ChangePasswordService.isPasswordValid(password, confirmPassword);
     }
 
+    // Veririfica se a senha é válida usando regex
     private static boolean isPasswordValid(String password, String confirmPassword) {
 
         if (password == null || password.isBlank()) return false;

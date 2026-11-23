@@ -1,3 +1,4 @@
+
 // Feito por Luis Felipe Pontes Mita - 25018740
 
 import 'package:flutter/material.dart';
@@ -20,6 +21,20 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Configuração dos emuladores Firebase
+  const bool useFirebaseEmulators = true;
+
+  if (useFirebaseEmulators) {
+    await FirebaseAuth.instance.useAuthEmulator(
+      '127.0.0.1',
+      9099,
+    );
+
+    FirebaseFunctions.instanceFor(
+      region: 'southamerica-east1',
+    ).useFunctionsEmulator(
+      '127.0.0.1',
+      5001,
   if (useFirebaseEmulators) {
     FirebaseFunctions.instanceFor(
       region: 'southamerica-east1',

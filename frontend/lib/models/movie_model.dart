@@ -1,4 +1,3 @@
-
 // Adições e modificações por Felipe Batista Bastos - 25005337
 
 class Movie {
@@ -10,6 +9,7 @@ class Movie {
   final String genre;
   final List<String> platforms;
   final String imageUrl;
+  final String category;
 
   const Movie({
     required this.id,
@@ -20,6 +20,7 @@ class Movie {
     required this.genre,
     required this.platforms,
     required this.imageUrl,
+    this.category = 'movie',
   });
 
   factory Movie.example() => const Movie(

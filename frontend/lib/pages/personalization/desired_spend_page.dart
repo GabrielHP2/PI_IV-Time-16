@@ -46,12 +46,12 @@ class _DesiredSpendPageState extends State<DesiredSpendPage> {
   void _continue() {
     final spend = _parseSpend(_spendController.text);
 
-    if (spend == null || spend < 0) {
+    if (spend == null || spend <= 0) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Informe um valor válido para continuar.'),
+            content: Text('Informe um valor maior que zero para continuar.'),
           ),
         );
       return;

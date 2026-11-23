@@ -1,4 +1,5 @@
-// Feito por Luis Felipe Pontes Mita - 25018740
+
+ // Feito por Luis Felipe Pontes Mita - 25018740
 
 import 'package:flutter/material.dart';
 
@@ -26,6 +27,10 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isLoading = false;
 
+  final AuthService _authService = AuthService();
+
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -34,6 +39,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
     if (_isLoading || !_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -46,6 +58,24 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
+      Navigator.pushNamed(context, AppRoutes.home);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.home,
@@ -73,9 +103,15 @@ class _LoginPageState extends State<LoginPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: Image.asset(kLogoAsset, width: 100, fit: BoxFit.contain),
+              child: Image.asset(
+                kLogoAsset,
+                width: 100,
+                fit: BoxFit.contain,
+              ),
             ),
+
             const SizedBox(height: 40),
+
             AppTextField(
               label: 'Email',
               controller: _emailController,
@@ -83,7 +119,9 @@ class _LoginPageState extends State<LoginPage> {
               textInputAction: TextInputAction.next,
               validator: validateRequired,
             ),
+
             const SizedBox(height: 12),
+
             AppTextField(
               label: 'Senha',
               controller: _passwordController,
@@ -91,29 +129,44 @@ class _LoginPageState extends State<LoginPage> {
               textInputAction: TextInputAction.done,
               validator: validatePassword,
             ),
+
             const SizedBox(height: 20),
+
             Center(
               child: LinkText(
                 text: 'Esqueci a senha',
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.forgotPassword,
+                ),
               ),
             ),
+
             const SizedBox(height: 20),
+
             PrimaryButton(
               text: _isLoading ? 'Entrando...' : 'Entrar',
               onPressed: _isLoading ? null : _login,
             ),
+
             const SizedBox(height: 32),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
                   'Não tem uma conta? ',
-                  style: TextStyle(color: AppColors.onDark, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.onDark,
+                    fontSize: 13,
+                  ),
                 ),
                 LinkText(
                   text: 'Registre-se',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.register,
+                  ),
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.register),
                 ),

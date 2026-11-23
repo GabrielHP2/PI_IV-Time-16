@@ -3,6 +3,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/movie_model.dart';
+import '../models/platform_model.dart';
+import '../models/subscription_plan_model.dart';
 
 class PersonalizationRepository {
   PersonalizationRepository._();
@@ -24,23 +26,38 @@ class PersonalizationRepository {
   }
 
   // Indica que o usuário registrou a prévia do planejamento.
-  static final ValueNotifier<bool> isPlanRegistered = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> isPlanRegistered =
+      ValueNotifier<bool>(false);
 
   static void setPlanRegistered(bool value) {
     isPlanRegistered.value = value;
   }
 
-  // Plataformas que o usuário informou assinar.
+  // Último planejamento calculado pelo backend durante a sessão atual.
+  static final ValueNotifier<SubscriptionPlan?> subscriptionPlan =
+      ValueNotifier<SubscriptionPlan?>(null);
+
+  static void setSubscriptionPlan(SubscriptionPlan plan) {
+    subscriptionPlan.value = plan;
+  }
+
+  static void clearSubscriptionPlan() {
+    subscriptionPlan.value = null;
+    isPlanRegistered.value = false;
+  }
+
+  // Nomes das plataformas selecionadas. Mantido como String para compatibilidade
+  // com a Main Page, notificações e Configurações já existentes.
   static final ValueNotifier<List<String>> subscribedPlatforms =
       ValueNotifier<List<String>>([]);
 
-  // Filmes e séries que o usuário informou estar assistindo.
-  static final ValueNotifier<List<Movie>> ongoingContents =
-      ValueNotifier<List<Movie>>([]);
+  // IDs numéricos exigidos pela função setSubscriptionPlan do backend.
+  static final ValueNotifier<List<int>> subscribedPlatformIds =
+      ValueNotifier<List<int>>([]);
 
-  // Filmes e séries que o usuário gostaria de assistir futuramente.
-  static final ValueNotifier<List<Movie>> desiredContents =
-      ValueNotifier<List<Movie>>([]);
+  // Catálogo de plataformas retornado pela Cloud Function getPlatforms.
+  static final ValueNotifier<List<PlatformModel>> availablePlatforms =
+      ValueNotifier<List<PlatformModel>>([]);
 
   static bool containsPlatform(String platform) {
     return subscribedPlatforms.value.contains(platform);
@@ -57,6 +74,36 @@ class PersonalizationRepository {
       subscribedPlatforms.value = [...currentPlatforms, platform];
     }
   }
+
+  static bool containsPlatformId(int platformId) {
+    return subscribedPlatformIds.value.contains(platformId);
+  }
+
+  static void togglePlatformItem(PlatformModel platform) {
+    final selectedNames = [...subscribedPlatforms.value];
+    final selectedIds = [...subscribedPlatformIds.value];
+
+    if (selectedIds.contains(platform.id)) {
+      selectedIds.remove(platform.id);
+      selectedNames.remove(platform.name);
+    } else {
+      selectedIds.add(platform.id);
+      if (!selectedNames.contains(platform.name)) {
+        selectedNames.add(platform.name);
+      }
+    }
+
+    subscribedPlatforms.value = selectedNames;
+    subscribedPlatformIds.value = selectedIds;
+  }
+
+  // Filmes e séries que o usuário informou estar assistindo.
+  static final ValueNotifier<List<Movie>> ongoingContents =
+      ValueNotifier<List<Movie>>([]);
+
+  // Filmes e séries que o usuário gostaria de assistir futuramente.
+  static final ValueNotifier<List<Movie>> desiredContents =
+      ValueNotifier<List<Movie>>([]);
 
   static bool containsOngoingContent(String movieId) {
     return ongoingContents.value.any((movie) => movie.id == movieId);

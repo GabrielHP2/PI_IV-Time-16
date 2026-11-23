@@ -20,7 +20,14 @@ class SimpleMovieCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final item = movie;
-    final String imageUrl = isLarge ? item.banner_path : item.poster_path;
+    const tmdbBaseUrl = 'https://image.tmdb.org/t/p/';
+
+    final String path = isLarge ? item.banner_path : item.poster_path;
+    final String size = isLarge ? 'w780' : 'w500';
+
+    final String imageUrl = path.startsWith('http')
+      ? path
+      : '$tmdbBaseUrl$size$path';
 
     return GestureDetector(
       onTap: onTap,

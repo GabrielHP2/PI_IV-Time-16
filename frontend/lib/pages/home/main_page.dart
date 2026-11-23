@@ -16,18 +16,24 @@ import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 
 Future<List<SimpleMovie>> getLaunchingContent(int page) async {
-  final callable = FirebaseFunctions.instance.httpsCallable('getLaunchingContent');
+  final callable = FirebaseFunctions.instanceFor(region: "southamerica-east1").httpsCallable('getLaunchingContent');
   final response = await callable.call({'page': page});
 
-  final data = Map<String, dynamic>.from(response.data);
+  final List<dynamic> groups = response.data as List<dynamic>;
+  final List<SimpleMovie> launchingContent = [];
 
-  final List<dynamic> jsonData = data['results'];
+  for (final group in groups) {
+    // Cada grupo (movie ou tv) pode ser um mapa com 'results' ou uma lista direta.
+    final List<dynamic> items = group is Map
+        ? (group['results'] as List<dynamic>)
+        : group as List<dynamic>;
 
-  final List<SimpleMovie> launchingContent = jsonData
-    .map((json) => SimpleMovie.fromJson(
-          Map<String, dynamic>.from(json),
-        ))
-    .toList();
+    for (final json in items) {
+      launchingContent.add(
+        SimpleMovie.fromJson(Map<String, dynamic>.from(json)),
+      );
+    }
+  }
 
   return launchingContent;
 }
@@ -36,15 +42,21 @@ Future<List<SimpleMovie>> getRandomContent(int page) async {
   final callable = FirebaseFunctions.instanceFor(region: "southamerica-east1").httpsCallable('getRandomContent');
   final response = await callable.call({'page': page});
 
-  final data = Map<String, dynamic>.from(response.data);
+  final List<dynamic> groups = response.data as List<dynamic>;
+  final List<SimpleMovie> randomContent = [];
 
-  final List<dynamic> jsonData = data['results'];
+  for (final group in groups) {
+    // Cada grupo (movie ou tv) pode ser um mapa com 'results' ou uma lista direta.
+    final List<dynamic> items = group is Map
+        ? (group['results'] as List<dynamic>)
+        : group as List<dynamic>;
 
-  final List<SimpleMovie> randomContent = jsonData
-    .map((json) => SimpleMovie.fromJson(
-          Map<String, dynamic>.from(json),
-        ))
-    .toList();
+    for (final json in items) {
+      randomContent.add(
+        SimpleMovie.fromJson(Map<String, dynamic>.from(json)),
+      );
+    }
+  }
 
   return randomContent;
 }

@@ -6,7 +6,7 @@ import 'dart:math' as math;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
-import '../../models/movie_model.dart';
+import '../../models/simple_movie_model.dart';
 import '../../components/widgets/movie_card.dart';
 import '../../components/widgets/notification_panel.dart';
 import '../../theme/app_theme.dart';
@@ -15,7 +15,7 @@ import '../../repositories/notification_repository.dart';
 import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 
-Future<List<Movie>> getLaunchingContent(int page) async {
+Future<List<SimpleMovie>> getLaunchingContent(int page) async {
   final callable = FirebaseFunctions.instance.httpsCallable('getLaunchingContent');
   final response = await callable.call({'page': page});
 
@@ -23,8 +23,8 @@ Future<List<Movie>> getLaunchingContent(int page) async {
 
   final List<dynamic> jsonData = data['results'];
 
-  final List<Movie> launchingContent = jsonData
-    .map((json) => Movie.fromJson(
+  final List<SimpleMovie> launchingContent = jsonData
+    .map((json) => SimpleMovie.fromJson(
           Map<String, dynamic>.from(json),
         ))
     .toList();
@@ -32,7 +32,7 @@ Future<List<Movie>> getLaunchingContent(int page) async {
   return launchingContent;
 }
 
-Future<List<Movie>> getRandomContent(int page) async {
+Future<List<SimpleMovie>> getRandomContent(int page) async {
   final callable = FirebaseFunctions.instance.httpsCallable('getRandomContent');
   final response = await callable.call({'page': page});
 
@@ -40,8 +40,8 @@ Future<List<Movie>> getRandomContent(int page) async {
 
   final List<dynamic> jsonData = data['results'];
 
-  final List<Movie> randomContent = jsonData
-    .map((json) => Movie.fromJson(
+  final List<SimpleMovie> randomContent = jsonData
+    .map((json) => SimpleMovie.fromJson(
           Map<String, dynamic>.from(json),
         ))
     .toList();
@@ -60,13 +60,13 @@ class _MainPageState extends State<MainPage> {
   final PageController _pageController = PageController();
   int _currentLaunch = 0;
 
-  List<Movie> lancamentos = [];
-  List<Movie> populares = [];
+  List<SimpleMovie> lancamentos = [];
+  List<SimpleMovie> populares = [];
   bool isLoading = true;
   
   Future<void> carregarFilmes() async {
     try {
-      final resultados = await Future.wait<List<Movie>>([
+      final resultados = await Future.wait<List<SimpleMovie>>([
         getLaunchingContent(1),
         getRandomContent(1),
       ]);
@@ -107,7 +107,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  void _openMovie(Movie movie) {
+  void _openMovie(SimpleMovie movie) {
     Navigator.pushNamed(
       context,
       AppRoutes.detailedView,
@@ -303,7 +303,7 @@ class _MainPageState extends State<MainPage> {
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: MovieCard(
+                child: SimpleMovieCard(
                   movie: lancamentos[index],
                   isLarge: true,
                   onTap: () => _openMovie(lancamentos[index]),
@@ -348,7 +348,7 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Widget _buildHorizontalList(List<Movie> movies) {
+  Widget _buildHorizontalList(List<SimpleMovie> movies) {
     return SizedBox(
       height: 180,
       child: ListView.builder(
@@ -358,7 +358,7 @@ class _MainPageState extends State<MainPage> {
         itemBuilder: (context, index) {
           return Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: MovieCard(
+            child: SimpleMovieCard(
               movie: movies[index],
               onTap: () => _openMovie(movies[index]),
             ),

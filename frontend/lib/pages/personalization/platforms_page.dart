@@ -3,33 +3,52 @@
 import 'package:flutter/material.dart';
 
 import '../../components/widgets/primary_button.dart';
+import '../../models/platform_model.dart';
 import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
+import '../../services/personalization_service.dart';
 import '../../theme/app_theme.dart';
 
-class PlatformsPage extends StatelessWidget {
+class PlatformsPage extends StatefulWidget {
   const PlatformsPage({super.key});
 
-  // Opções iniciais da interface. A lista poderá ser alimentada pelo backend.
-  static const List<String> platforms = [
-    'Netflix',
-    'Prime Video',
-    'Disney+',
-    'Max',
-    'Globoplay',
-    'Apple TV+',
-  ];
+  @override
+  State<PlatformsPage> createState() => _PlatformsPageState();
+}
 
-  void _continue(BuildContext context) {
-    final selectedPlatforms =
-        PersonalizationRepository.subscribedPlatforms.value;
+class _PlatformsPageState extends State<PlatformsPage> {
+  final PersonalizationService _personalizationService =
+      PersonalizationService();
 
-    if (selectedPlatforms.isEmpty) {
+  late Future<List<PlatformModel>> _platformsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _platformsFuture = _loadPlatforms();
+  }
+
+  Future<List<PlatformModel>> _loadPlatforms() async {
+    final platforms = await _personalizationService.getPlatforms();
+    PersonalizationRepository.availablePlatforms.value = platforms;
+    return platforms;
+  }
+
+  void _retryLoading() {
+    setState(() {
+      _platformsFuture = _loadPlatforms();
+    });
+  }
+
+  void _continue() {
+    if (PersonalizationRepository.subscribedPlatformIds.value.isEmpty) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Selecione pelo menos uma plataforma para continuar.'),
+            content: Text(
+              'Selecione pelo menos uma plataforma para continuar.',
+            ),
           ),
         );
       return;
@@ -50,50 +69,111 @@ class PlatformsPage extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          child: ValueListenableBuilder<List<String>>(
-            valueListenable:
-                PersonalizationRepository.subscribedPlatforms,
-            builder: (context, selectedPlatforms, child) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Quais dessas plataformas você já é assinante?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.onDark,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: GridView.builder(
-                      itemCount: platforms.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.05,
-                      ),
-                      itemBuilder: (context, index) {
-                        final platform = platforms[index];
-                        final isSelected =
-                            selectedPlatforms.contains(platform);
+          child: Column(
+            children: [
+              const Text(
+                'Quais dessas plataformas você já é assinante?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.onDark,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: FutureBuilder<List<PlatformModel>>(
+                  future: _platformsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
 
-                        return _PlatformCard(
-                          name: platform,
-                          isSelected: isSelected,
-                          onTap: () {
-                            PersonalizationRepository.togglePlatform(platform);
+                    if (snapshot.hasError) {
+                      final message = snapshot.error
+                          .toString()
+                          .replaceFirst('Exception: ', '');
+
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.cloud_off,
+                              color: AppColors.onDark,
+                              size: 42,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              message,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.onDark,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _retryLoading,
+                              child: const Text('Tentar novamente'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final platforms = snapshot.data ?? [];
+
+                    if (platforms.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Nenhuma plataforma disponível no momento.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.onDark),
+                        ),
+                      );
+                    }
+
+                    return ValueListenableBuilder<List<int>>(
+                      valueListenable:
+                          PersonalizationRepository.subscribedPlatformIds,
+                      builder: (context, selectedIds, child) {
+                        return GridView.builder(
+                          itemCount: platforms.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.05,
+                          ),
+                          itemBuilder: (context, index) {
+                            final platform = platforms[index];
+                            final isSelected =
+                                selectedIds.contains(platform.id);
+
+                            return _PlatformCard(
+                              platform: platform,
+                              isSelected: isSelected,
+                              onTap: () {
+                                PersonalizationRepository
+                                    .togglePlatformItem(platform);
+                              },
+                            );
                           },
                         );
                       },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              ValueListenableBuilder<List<String>>(
+                valueListenable:
+                    PersonalizationRepository.subscribedPlatforms,
+                builder: (context, selectedPlatforms, child) {
+                  return Text(
                     selectedPlatforms.isEmpty
                         ? 'Selecione as plataformas que você assina.'
                         : selectedPlatforms.length == 1
@@ -104,15 +184,15 @@ class PlatformsPage extends StatelessWidget {
                       color: AppColors.onDark,
                       fontSize: 13,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  PrimaryButton(
-                    text: 'Avançar',
-                    onPressed: () => _continue(context),
-                  ),
-                ],
-              );
-            },
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                text: 'Avançar',
+                onPressed: _continue,
+              ),
+            ],
           ),
         ),
       ),
@@ -122,12 +202,12 @@ class PlatformsPage extends StatelessWidget {
 
 class _PlatformCard extends StatelessWidget {
   const _PlatformCard({
-    required this.name,
+    required this.platform,
     required this.isSelected,
     required this.onTap,
   });
 
-  final String name;
+  final PlatformModel platform;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -152,17 +232,44 @@ class _PlatformCard extends StatelessWidget {
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      name,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.onDark,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (platform.logoUrl.isNotEmpty)
+                        Expanded(
+                          child: Image.network(
+                            platform.logoUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.live_tv,
+                                color: AppColors.onDark,
+                                size: 38,
+                              );
+                            },
+                          ),
+                        )
+                      else
+                        const Expanded(
+                          child: Icon(
+                            Icons.live_tv,
+                            color: AppColors.onDark,
+                            size: 38,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        platform.name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.onDark,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),

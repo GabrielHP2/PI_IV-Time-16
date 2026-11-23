@@ -9,11 +9,7 @@ class AuthService {
             FirebaseFunctions.instanceFor(
               region: 'southamerica-east1',
             ),
-        _auth = auth ?? FirebaseAuth.instance {
-    // SOMENTE PARA TESTES LOCAIS.
-    _functions.useFunctionsEmulator('localhost', 5001);
-    _auth.useAuthEmulator('localhost', 9099);
-  }
+        _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFunctions _functions;
   final FirebaseAuth _auth;

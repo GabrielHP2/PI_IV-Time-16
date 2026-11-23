@@ -3,13 +3,13 @@
 
 class Movie {
   final int id;
-  final String title;
+  final String? title;
   final String? synopsis;
   final String? release_date;
-  final double rating;
-  final List<String> genre;
+  final double? rating;
+  final List<String>? genre;
   final List<String>? platform;
-  final List<Movie> similar;
+  final List<Movie>? similar;
   final String banner_path;
   final String poster_path;
 
@@ -17,13 +17,13 @@ class Movie {
     required this.id,
     required this.banner_path,
     required this.poster_path,
-    required this.title,
-    required this.synopsis,
-    required this.release_date,
-    required this.rating,
-    required this.genre,
-    required this.platform,
-    required this.similar,
+    this.title,
+    this.synopsis,
+    this.release_date,
+    this.rating,
+    this.genre,
+    this.platform,
+    this.similar,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {

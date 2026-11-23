@@ -23,6 +23,9 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
+
+  bool _isLoading = false;
 
   final AuthService _authService = AuthService();
 
@@ -43,6 +46,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _isLoading = true;
     });
+    if (_isLoading || !_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
 
     try {
       await _authService.login(
@@ -70,6 +76,20 @@ class _LoginPageState extends State<LoginPage> {
           _isLoading = false;
         });
       }
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -147,6 +167,8 @@ class _LoginPageState extends State<LoginPage> {
                     context,
                     AppRoutes.register,
                   ),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.register),
                 ),
               ],
             ),

@@ -1,4 +1,4 @@
-// Autor: Gabriel Henrique Pacagnelli Pagliato
+﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
@@ -8,6 +8,7 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
+    // Decodifica o token do usuário e verifica se ele está autenticado
     if (!request.auth) {
     
         logger.error("Error from getRandomContent: User not authenticated");
@@ -22,6 +23,7 @@ export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) =
         throw new HttpsError("invalid-argument", "Página inválida");
     }
 
+    // Monta a URL indiviadual de busca para filmes e séries disponiveis por assinatura no Brasil
     const moviesUrl = `${BASE_URL}discover/movie?include_adult=false&include_video=false&language=${LANGUAGE}&page=${pageNumber}&region=${REGION}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate`;
     const seriesURL = `${BASE_URL}discover/tv?include_adult=false&include_null_first_air_dates=false&language=${LANGUAGE}&page=${pageNumber}&sort_by=popularity.desc&watch_region=${REGION}&with_watch_monetization_types=flatrate`;
     
@@ -34,6 +36,7 @@ export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) =
         }
     };
 
+    // Faz o fetch dos filmes
     const rawMoviesJson = await fetch(moviesUrl, options)
     .then((res) => {
 
@@ -54,6 +57,7 @@ export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) =
     logger.info("Info from getRandomContent: Movies content fetched");
     
 
+    // Faz o fetch das séries
     const rawSeriesJson = await fetch(seriesURL, options)
     .then((res) => {
 
@@ -73,6 +77,7 @@ export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) =
 
     logger.info("Info from getRandomContent: Series content fetched");
 
+    // Converte os resultados de cada categoria e mantém cada categoria no seu próprio grupo
     const parsedMovies: ResponseContentType = {
         page: rawMoviesJson.page, 
         total_pages: rawMoviesJson.total_pages, 
@@ -88,6 +93,7 @@ export const getRandomContent = onCall({secrets: [API_TOKEN]}, async (request) =
         category: "tv"
     };
 
+    // Junta os filmes e séries em um unico array
     const response: ResponseContentType[] = [parsedMovies, parsedSeries];
 
     logger.info("Info from getRandomContent: OK");

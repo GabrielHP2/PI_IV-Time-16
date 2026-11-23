@@ -17,14 +17,17 @@ import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 
 Future<Movie> getMovieDetails(SimpleMovie simple) async {
-  final callable = FirebaseFunctions.instance.httpsCallable('getMovieDetails'); // ajuste
+  final callable = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  ).httpsCallable('getMovieDetails'); // ajuste o nome, se for outro
+
   final response = await callable.call({
     'id': simple.id,
-    'type': simple.category,
+    'category': simple.category, // ou 'type', conforme o backend espera
   });
 
-  final json = Map<String, dynamic>.from(response.data);
-  json['media_type'] ??= simple.category;
+  final json = Map<String, dynamic>.from(response.data as Map);
+  json['category'] ??= simple.category; // antes: 'media_type'
 
   return Movie.fromJson(json);
 }
@@ -38,11 +41,11 @@ Future<List<SimpleMovie>> getLaunchingContent(int page) async {
   final data = Map<String, dynamic>.from(response.data as Map);
   final results = List<dynamic>.from(data['results'] as List);
 
-  return results
-      .map((json) => SimpleMovie.fromJson(
-            Map<String, dynamic>.from(json as Map),
-          ))
-      .toList();
+  return results.map((json) {
+    final item = Map<String, dynamic>.from(json as Map);
+    item['category'] = data['category'];
+    return SimpleMovie.fromJson(item);
+  }).toList();
 }
 
 Future<List<SimpleMovie>> getRandomContent(int page) async {
@@ -59,9 +62,11 @@ Future<List<SimpleMovie>> getRandomContent(int page) async {
         : group as List<dynamic>;
 
     for (final json in items) {
-      randomContent.add(
-        SimpleMovie.fromJson(Map<String, dynamic>.from(json)),
-      );
+      final item = Map<String, dynamic>.from(json);
+      if (group is Map) {
+        item['category'] = group['category'];
+      }
+      randomContent.add(SimpleMovie.fromJson(item));
     }
   }
 
@@ -126,13 +131,32 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  void _openMovie(SimpleMovie movie) {
+Future<void> _openMovie(SimpleMovie simple) async {
+  // Indicador de carregamento; também impede toques repetidos.
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    final movie = await getMovieDetails(simple);
+    if (!mounted) return;
+
+    Navigator.pop(context); // fecha o carregamento
     Navigator.pushNamed(
       context,
       AppRoutes.detailedView,
-      arguments: movie,
+      arguments: movie, // agora é um Movie completo
     );
+  } catch (e) {
+    debugPrint('Erro ao carregar detalhes: $e');
+    if (!mounted) return;
+
+    Navigator.pop(context); // fecha o carregamento
+    _showPendingMessage('Não foi possível carregar os detalhes.');
   }
+}
 
   void _showNotifications() {
     final screenSize = MediaQuery.of(context).size;

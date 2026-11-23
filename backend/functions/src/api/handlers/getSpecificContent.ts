@@ -1,4 +1,4 @@
-// Autor: Gabriel Henrique Pacagnelli Pagliato
+﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
@@ -8,6 +8,7 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
+    // Decodifica o token do usuário e verifica se ele está autenticado
     if (!request.auth) {
         
         logger.error("Error from getSpecificContent: User not authenticated");
@@ -28,6 +29,7 @@ export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request)
         throw new HttpsError("invalid-argument", "Página inválida");
     }
 
+    // Monta a URL individual de busca para filmes e séries com o título informado
     const moviesUrl = `${BASE_URL}/search/movie?query=${contentName}&include_adult=false&language=${LANGUAGE}&page=${pageNumber}&region=${REGION}`;
     const seriesURL = `${BASE_URL}/search/tv?query=${contentName}&include_adult=false&language=${LANGUAGE}&page=${pageNumber}`;
 
@@ -40,6 +42,7 @@ export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request)
         }
     };
 
+    // Busca os filmes com o título informado
     const rawMoviesJson = await fetch(moviesUrl, options)
     .then((res) => {
 
@@ -60,6 +63,7 @@ export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request)
     logger.info("Info from getSpecificContent: Movies content fetched");
 
 
+    // Busca as séries com o título informado
     const rawSeriesJson = await fetch(seriesURL, options)
     .then((res) => {
 
@@ -80,6 +84,7 @@ export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request)
     logger.info("Info from getSpecificContent: Series content fetched");
 
 
+    // Converte os resultados de cada categoria e mantém cada categoria no seu próprio grupo
     const parsedMovies: ResponseContentType = {
 
         page: rawMoviesJson.page, 
@@ -96,6 +101,7 @@ export const getSpecificContent = onCall({secrets: [API_TOKEN]}, async (request)
         category: "tv"
     };
 
+    // Junta os filmes e séries em um unico array
     const response: ResponseContentType[] = [parsedMovies, parsedSeries];
 
     logger.info("Info from getSpecificContent: OK");

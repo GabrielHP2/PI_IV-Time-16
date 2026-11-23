@@ -11,6 +11,7 @@ public class ResetPasswordService {
         return ResetPasswordService.isEmailValid(email);
     }
 
+    // Veririfica se o email é válido usando regex
     private static boolean isEmailValid(String email) {
 
         if (email == null || email.isBlank()) return false;

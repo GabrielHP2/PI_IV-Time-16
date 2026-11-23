@@ -1,4 +1,4 @@
-import { HttpsError, onCall } from "firebase-functions/https";
+﻿import { HttpsError, onCall } from "firebase-functions/https";
 import { API_TOKEN, BASE_URL, LANGUAGE, REGION } from "../../shared/apiConfig";
 import * as logger from "firebase-functions/logger";
 import { parsePlatforms } from "../../shared/parsePlatforms";
@@ -6,6 +6,7 @@ import { PlatformType } from "../types/platformType";
 
 export const getPlatforms = onCall({secrets: [API_TOKEN]}, async (request) => {
     
+    // Decodifica o token do usuário e verifica se ele está autenticado
     if (!request.auth) {
 
         logger.error("Error from getPlatforms: User unauthenticated");
@@ -13,6 +14,7 @@ export const getPlatforms = onCall({secrets: [API_TOKEN]}, async (request) => {
     }
 
     
+    // Monta a URL para buscar os provedores
     const url = `${BASE_URL}/watch/providers/movie?language=${LANGUAGE}&watch_region=${REGION}`;
 
     const options = {
@@ -24,6 +26,7 @@ export const getPlatforms = onCall({secrets: [API_TOKEN]}, async (request) => {
         }
     }
 
+    // Busca os dados brutos dos provedores
     const rawPlatformsInfo = await fetch(url, options)
     .then((res) => {
 
@@ -44,6 +47,7 @@ export const getPlatforms = onCall({secrets: [API_TOKEN]}, async (request) => {
 
     logger.info("Info from getPlatforms: Platforms infos fetched");
 
+    // Filtra os provedores permitidos e pega apenas os campos necessários
     const parsedPlatforms: PlatformType[] = parsePlatforms(rawPlatformsInfo.results);
 
     logger.info("Info from getPlatforms: OK");

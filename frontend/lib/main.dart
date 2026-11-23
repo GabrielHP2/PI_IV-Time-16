@@ -10,10 +10,6 @@ import 'routes.dart';
 import 'theme/app_theme.dart';
 import 'firebase_options.dart';
 
-// true: utiliza os emuladores locais.
-// false: utiliza os serviços Firebase publicados.
-const bool useFirebaseEmulators = true;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -35,14 +31,6 @@ Future<void> main() async {
     ).useFunctionsEmulator(
       '127.0.0.1',
       5001,
-  if (useFirebaseEmulators) {
-    FirebaseFunctions.instanceFor(
-      region: 'southamerica-east1',
-    ).useFunctionsEmulator('localhost', 5001);
-
-    await FirebaseAuth.instance.useAuthEmulator(
-      'localhost',
-      9099,
     );
   }
 

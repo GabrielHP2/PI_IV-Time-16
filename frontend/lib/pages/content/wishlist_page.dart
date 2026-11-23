@@ -18,6 +18,35 @@ class WishlistPage extends StatefulWidget {
 class _WishlistPageState extends State<WishlistPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWishlist();
+  }
+
+  Future<void> _loadWishlist({bool refresh = false}) async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      if (refresh) {
+        await WishlistRepository.refresh();
+      } else {
+        await WishlistRepository.load();
+      }
+    } catch (error) {
+      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -36,16 +65,10 @@ class _WishlistPageState extends State<WishlistPage> {
   void _onNavigationTap(int index) {
     switch (index) {
       case 0:
-        // Já estamos na Minha Lista.
         break;
-
       case 1:
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.home,
-        );
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
         break;
-
       case 2:
         Navigator.pushNamed(context, AppRoutes.settings);
         break;
@@ -61,13 +84,9 @@ class _WishlistPageState extends State<WishlistPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Cabeçalho
             Container(
               color: colors.surfaceContainerHighest,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
                   Container(
@@ -85,71 +104,45 @@ class _WishlistPageState extends State<WishlistPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
-                  // Pesquisa
                   Expanded(
                     child: SizedBox(
                       height: 38,
                       child: TextField(
                         controller: _searchController,
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
                         decoration: InputDecoration(
                           hintText: 'Buscar conteúdo',
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding:
-                              const EdgeInsets.symmetric(
-                            horizontal: 12,
-                          ),
+                              const EdgeInsets.symmetric(horizontal: 12),
                           suffixIcon: const Icon(
                             Icons.search,
                             color: AppColors.button,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                         ),
                       ),
                     ),
                   ),
-
-                  // Notificações
                   IconButton(
-                    tooltip: 'Notificações',
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'O painel de notificações será implementado.',
-                          ),
-                        ),
-                      );
-                    },
+                    tooltip: 'Atualizar lista',
+                    onPressed: () => _loadWishlist(refresh: true),
                     icon: const Icon(
-                      Icons.notifications_none,
+                      Icons.refresh,
                       color: AppColors.button,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Título
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                18,
-                22,
-                18,
-                12,
-              ),
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 12),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -161,94 +154,57 @@ class _WishlistPageState extends State<WishlistPage> {
                 ),
               ),
             ),
-
-            // Conteúdos salvos
             Expanded(
-              child: ValueListenableBuilder<List<Movie>>(
-                valueListenable: WishlistRepository.items,
-                builder: (context, movies, child) {
-                  final filteredMovies = movies.where((movie) {
-                    return movie.title
-                        .toLowerCase()
-                        .contains(_searchQuery.toLowerCase());
-                  }).toList();
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage != null
+                      ? _buildError()
+                      : ValueListenableBuilder<List<Movie>>(
+                          valueListenable: WishlistRepository.items,
+                          builder: (context, movies, child) {
+                            final filteredMovies = movies.where((movie) {
+                              return movie.title.toLowerCase().contains(
+                                    _searchQuery.toLowerCase(),
+                                  );
+                            }).toList();
 
-                  if (movies.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.bookmark_border,
-                              size: 64,
-                              color: Colors.white70,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              'Sua lista está vazia.',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            if (movies.isEmpty) {
+                              return _buildEmpty();
+                            }
+                            if (filteredMovies.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  'Nenhum conteúdo encontrado.',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              );
+                            }
+
+                            return GridView.builder(
+                              padding:
+                                  const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                              itemCount: filteredMovies.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 0.62,
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Adicione filmes e séries que deseja assistir.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
+                              itemBuilder: (context, index) {
+                                final movie = filteredMovies[index];
+                                return WishlistCard(
+                                  movie: movie,
+                                  onTap: () => _openContent(movie),
+                                );
+                              },
+                            );
+                          },
                         ),
-                      ),
-                    );
-                  }
-
-                  if (filteredMovies.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Nenhum conteúdo encontrado.',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }
-
-                  return GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(
-                      12,
-                      0,
-                      12,
-                      12,
-                    ),
-                    itemCount: filteredMovies.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.62,
-                    ),
-                    itemBuilder: (context, index) {
-                      final movie = filteredMovies[index];
-
-                      return WishlistCard(
-                        movie: movie,
-                        onTap: () => _openContent(movie),
-                      );
-                    },
-                  );
-                },
-              ),
             ),
           ],
         ),
       ),
-
-      // Navegação inferior
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: colors.surfaceContainerHighest,
         selectedItemColor: AppColors.button,
@@ -264,22 +220,70 @@ class _WishlistPageState extends State<WishlistPage> {
             activeIcon: CircleAvatar(
               radius: 16,
               backgroundColor: Color(0xFF923DB4),
-              child: Icon(
-                Icons.bookmark,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.bookmark, color: Colors.white),
             ),
             label: 'Minha lista',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Início',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Perfil',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.bookmark_border, size: 64, color: Colors.white70),
+            SizedBox(height: 16),
+            Text(
+              'Sua lista está vazia.',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Adicione filmes e séries que deseja assistir.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => _loadWishlist(refresh: true),
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
       ),
     );
   }

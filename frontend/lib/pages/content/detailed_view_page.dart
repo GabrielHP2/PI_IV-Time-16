@@ -49,6 +49,7 @@ class DetailedViewPage extends StatefulWidget {
 
 class _DetailedViewPageState extends State<DetailedViewPage> {
   bool isSaved = false;
+  bool _isSaving = false;
   late ContentDetail _content;
   bool _contentInitialized = false;
   Movie? _movie;
@@ -56,14 +57,10 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
     if (_contentInitialized) return;
 
     if (widget.content != null) {
       _content = widget.content!;
-
-      // Compatibilidade com chamadas que enviam ContentDetail diretamente.
-      // Quando a tela recebe Movie pela rota, preservamos o ID original.
       _movie = Movie(
         id: 'content-${widget.content!.title}',
         title: widget.content!.title,
@@ -76,7 +73,6 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
       );
     } else {
       final args = ModalRoute.of(context)?.settings.arguments;
-
       if (args is Movie) {
         _movie = args;
         _content = ContentDetail(
@@ -93,43 +89,63 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
       }
     }
 
-    // O marcador começa de acordo com o estado real da lista compartilhada.
     if (_movie != null) {
       isSaved = WishlistRepository.contains(_movie!.id);
+      _loadSavedState();
     }
-
     _contentInitialized = true;
   }
 
-  void _toggleWishlist() {
-    final movie = _movie;
+  Future<void> _loadSavedState() async {
+    try {
+      await WishlistRepository.load();
+      final movie = _movie;
+      if (mounted && movie != null) {
+        setState(() => isSaved = WishlistRepository.contains(movie.id));
+      }
+    } catch (_) {
+      // O erro será apresentado se o usuário tentar alterar a lista.
+    }
+  }
 
-    if (movie == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível salvar este conteúdo.'),
-        ),
-      );
+  Future<void> _toggleWishlist() async {
+    final movie = _movie;
+    if (movie == null || _isSaving) {
+      if (movie == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível salvar este conteúdo.')),
+        );
+      }
       return;
     }
 
-    setState(() {
-      WishlistRepository.toggle(movie);
-      isSaved = WishlistRepository.contains(movie.id);
-    });
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
+    setState(() => _isSaving = true);
+    try {
+      await WishlistRepository.toggle(movie);
+      if (!mounted) return;
+      setState(() => isSaved = WishlistRepository.contains(movie.id));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              isSaved ? 'Adicionado à sua lista!' : 'Removido da sua lista!',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isSaved
-                ? 'Adicionado à sua lista!'
-                : 'Removido da sua lista!',
+            error.toString().replaceFirst('Exception: ', ''),
           ),
-          duration: const Duration(seconds: 2),
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   void _onNavigationTap(int index) {
@@ -158,9 +174,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Visão detalhada'),
-        leading: BackButton(
-          onPressed: () => Navigator.maybePop(context),
-        ),
+        leading: BackButton(onPressed: () => Navigator.maybePop(context)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -177,20 +191,39 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
                       color: colors.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.movie_outlined,
-                      color: colors.onPrimaryContainer,
-                      size: 42,
-                    ),
+                    child: _movie?.imageUrl.isNotEmpty == true
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              _movie!.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Icon(
+                                Icons.movie_outlined,
+                                color: colors.onPrimaryContainer,
+                                size: 42,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            Icons.movie_outlined,
+                            color: colors.onPrimaryContainer,
+                            size: 42,
+                          ),
                   ),
                   IconButton(
                     tooltip: isSaved
                         ? 'Remover da lista de desejos'
                         : 'Adicionar à lista de desejos',
-                    onPressed: _toggleWishlist,
-                    icon: Icon(
-                      isSaved ? Icons.bookmark : Icons.bookmark_border,
-                    ),
+                    onPressed: _isSaving ? null : _toggleWishlist,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          ),
                     color: colors.onPrimaryContainer,
                   ),
                 ],
@@ -214,22 +247,13 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.star,
-                          color: AppColors.button,
-                        ),
+                        const Icon(Icons.star, color: AppColors.button),
                         const SizedBox(width: 4),
-                        Text(
-                          '${_content.rating}/5',
-                          style: textTheme.bodyMedium,
-                        ),
+                        Text('${_content.rating}/5', style: textTheme.bodyMedium),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Gênero: ${_content.genre}',
-                      style: textTheme.bodyMedium,
-                    ),
+                    Text('Gênero: ${_content.genre}', style: textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -238,18 +262,14 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
           const SizedBox(height: 20),
           Text(
             'Sinopse',
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(_content.synopsis, style: textTheme.bodyMedium),
           const SizedBox(height: 22),
           Text(
             'Plataformas disponíveis',
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -267,9 +287,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
           const SizedBox(height: 22),
           Text(
             'Filmes e séries similares',
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           SizedBox(
@@ -280,22 +298,18 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final title = _content.similarTitles[index];
-
                 return ContentCard(
                   movie: Movie(
                     id: 'similar-$index',
                     title: title,
                     synopsis: '',
                     releaseDate: '',
-                    rating: 0.0,
+                    rating: 0,
                     genre: '',
                     platforms: const [],
                     imageUrl: '',
                   ),
-                  onTap: () {
-                    // A navegação para o conteúdo similar
-                    // poderá ser adicionada quando houver seus dados.
-                  },
+                  onTap: () {},
                 );
               },
             ),
@@ -312,10 +326,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
             icon: Icon(Icons.bookmark_border),
             label: 'Minha lista',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Início',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Perfil',

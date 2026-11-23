@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/movie_model.dart';
 import '../models/platform_model.dart';
+import '../models/subscription_plan_model.dart';
 
 class PersonalizationService {
   PersonalizationService({FirebaseFunctions? functions})
@@ -51,7 +52,7 @@ class PersonalizationService {
         if (categoryResult is! Map) continue;
         final categoryMap = Map<String, dynamic>.from(categoryResult);
         final String category =
-    categoryMap['category']?.toString() ?? '';
+            categoryMap['category']?.toString() ?? '';
         final rawResults = categoryMap['results'];
         if ((category != 'movie' && category != 'tv') || rawResults is! List) {
           continue;
@@ -71,6 +72,68 @@ class PersonalizationService {
     } on FirebaseFunctionsException catch (error) {
       throw _translateError(error, 'Não foi possível pesquisar filmes e séries.');
     }
+  }
+
+  /// Solicita ao backend o planejamento de assinaturas para os próximos meses.
+  Future<SubscriptionPlan> generateSubscriptionPlan({
+    required List<int> platformIds,
+    required List<Movie> currentContents,
+    required List<Movie> desiredContents,
+    required double currentExpense,
+    required double desiredExpense,
+  }) async {
+    if (platformIds.isEmpty) {
+      throw Exception('Selecione pelo menos uma plataforma assinada.');
+    }
+    if (currentExpense < 0 || desiredExpense <= 0) {
+      throw Exception('Informe valores de gastos válidos para gerar o planejamento.');
+    }
+
+    final payload = <String, dynamic>{
+      'platforms': platformIds,
+      'currentContent': currentContents.map(_toSelectedContent).toList(),
+      'desiredContent': desiredContents.map(_toSelectedContent).toList(),
+      'currentExpense': currentExpense,
+      'desiredExpense': desiredExpense,
+    };
+
+    try {
+      final response = await _functions
+          .httpsCallable('setSubscriptionPlan')
+          .call(payload);
+
+      if (response.data is! Map) {
+        throw Exception('O backend retornou um planejamento em formato inválido.');
+      }
+
+      return SubscriptionPlan.fromMap(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on FirebaseFunctionsException catch (error) {
+      throw _translateError(
+        error,
+        'Não foi possível gerar o planejamento de assinaturas.',
+      );
+    }
+  }
+
+  Map<String, dynamic> _toSelectedContent(Movie movie) {
+    final parts = movie.id.split(':');
+    final category = parts.length > 1 ? parts.first : movie.category;
+    final idText = parts.length > 1 ? parts.last : movie.id;
+    final contentId = int.tryParse(idText);
+
+    if (contentId == null || contentId < 1 ||
+        (category != 'movie' && category != 'tv')) {
+      throw FormatException(
+        'Não foi possível identificar o filme ou série "${movie.title}".',
+      );
+    }
+
+    return <String, dynamic>{
+      'id': contentId,
+      'category': category,
+    };
   }
 
   Future<Movie?> _getContentDetails(int id, String category) async {
@@ -118,7 +181,7 @@ class PersonalizationService {
   Exception _translateError(FirebaseFunctionsException error, String fallback) {
     switch (error.code) {
       case 'unauthenticated':
-        return Exception('Faça login para pesquisar no catálogo.');
+        return Exception('Faça login para continuar.');
       case 'unavailable':
         return Exception('Serviço indisponível. Verifique se o Firebase Emulator está ativo.');
       case 'invalid-argument':

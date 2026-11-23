@@ -23,25 +23,32 @@ export const setSubscriptionPlan = onCall({secrets: [API_TOKEN, mongoUri]}, asyn
 
     const { platforms, currentContent, desiredContent, currentExpense, desiredExpense } = request.data ?? {};
 
-    if (!platforms || !currentContent || !desiredContent || !currentExpense || !desiredExpense) {
+    if (
+        !Array.isArray(platforms) ||
+        !Array.isArray(currentContent) ||
+        !Array.isArray(desiredContent) ||
+        currentExpense === undefined || currentExpense === null ||
+        desiredExpense === undefined || desiredExpense === null
+    ) {
     
-        logger.error("Error from setSubscriptionPlan: Fields are missing");
-        throw new HttpsError("invalid-argument", "Informações ausentes");
+        logger.error("Error from setSubscriptionPlan: Fields are missing or have invalid types");
+        throw new HttpsError("invalid-argument", "Informações ausentes ou inválidas");
     }
-    
-    if (currentExpense < 0) {
+
+    if (typeof currentExpense !== "number" || !Number.isFinite(currentExpense) || currentExpense < 0) {
 
         logger.error("Error from setSubscriptionPlan: Invalid current expense");
         throw new HttpsError("invalid-argument", "Gasto atual inválido");
     }
     
-    if (desiredExpense <= 0) {
+    if (typeof desiredExpense !== "number" || !Number.isFinite(desiredExpense) || desiredExpense <= 0) {
     
         logger.error("Error from setSubscriptionPlan: Invalid desired expense");
         throw new HttpsError("invalid-argument", "Gasto desejado inválido");
     }
     
-    const rawSubbedPlatforms: number[] = platforms as any[];
+    const rawSubbedPlatforms: number[] = (platforms as unknown[])
+        .filter((platform): platform is number => Number.isInteger(platform));
     
     // Garante que nenhum ID inválido foi passado filtrando por IDs presentes no Set
     const supportedPlatforms: number[] = rawSubbedPlatforms.filter((platform) => ALLOWED_PROVIDERS.has(platform));
@@ -53,7 +60,22 @@ export const setSubscriptionPlan = onCall({secrets: [API_TOKEN, mongoUri]}, asyn
     }
     
     
-    // Faz um cast dos conteúdos pra a interface 'selectedContentType'
+    // Valida e faz o cast dos conteúdos para a interface 'selectedContentType'.
+    const isSelectedContent = (content: any): content is selectedContentType =>
+        content !== null &&
+        typeof content === "object" &&
+        Number.isInteger(content.id) &&
+        content.id > 0 &&
+        (content.category === "movie" || content.category === "tv");
+
+    if (
+        !currentContent.every(isSelectedContent) ||
+        !desiredContent.every(isSelectedContent)
+    ) {
+        logger.error("Error from setSubscriptionPlan: Invalid content list");
+        throw new HttpsError("invalid-argument", "Lista de conteúdos inválida");
+    }
+
     const currentContentList = currentContent as selectedContentType[];
     const desiredContentList = desiredContent as selectedContentType[];
     

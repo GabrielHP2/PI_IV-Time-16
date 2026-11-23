@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/movie_model.dart';
 import '../models/platform_model.dart';
+import '../models/subscription_plan_model.dart';
 
 class PersonalizationRepository {
   PersonalizationRepository._();
@@ -30,6 +31,19 @@ class PersonalizationRepository {
 
   static void setPlanRegistered(bool value) {
     isPlanRegistered.value = value;
+  }
+
+  // Último planejamento calculado pelo backend durante a sessão atual.
+  static final ValueNotifier<SubscriptionPlan?> subscriptionPlan =
+      ValueNotifier<SubscriptionPlan?>(null);
+
+  static void setSubscriptionPlan(SubscriptionPlan plan) {
+    subscriptionPlan.value = plan;
+  }
+
+  static void clearSubscriptionPlan() {
+    subscriptionPlan.value = null;
+    isPlanRegistered.value = false;
   }
 
   // Nomes das plataformas selecionadas. Mantido como String para compatibilidade

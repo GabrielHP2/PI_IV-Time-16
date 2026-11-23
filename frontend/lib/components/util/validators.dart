@@ -12,13 +12,19 @@ String? validateRequired(String? value) {
   return null;
 }
 
-/// Obrigatório e com mais de 8 e menos de 16 caracteres (9 a 15).
+/// Valida a senha conforme os requisitos do servidor Java.
 String? validatePassword(String? value) {
   final error = validateRequired(value);
   if (error != null) return error;
-  if (value!.length < 8 || value.length > 16) {
-    return 'A senha deve ter entre 8 e 16 caracteres';
+
+  final passwordRegex = RegExp(
+    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!*_?-])\S{6,126}$',
+  );
+
+  if (!passwordRegex.hasMatch(value!)) {
+    return 'A senha não atende a todos os requisitos informados.';
   }
+
   return null;
 }
 

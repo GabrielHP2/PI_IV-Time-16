@@ -1,4 +1,4 @@
-// Autor: Gabriel Henrique Pacagnelli Pagliato
+﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
@@ -7,6 +7,7 @@ import { parseDetailedContent } from "../../shared/parseDetailedContent";
 
 export const getContentDetails = onCall({secrets: [API_TOKEN]}, async (request) => {
 
+    // Decodifica o token do usuário e verifica se ele está autenticado
     if (!request.auth) {
 
         logger.error("Error from getContentDetails: User not authenticated");
@@ -37,6 +38,7 @@ export const getContentDetails = onCall({secrets: [API_TOKEN]}, async (request) 
     
     let url: string;
 
+    // Define as opções de requisição, incluindo o token de autenticação
     const options = {
 
         method: "GET",
@@ -48,8 +50,10 @@ export const getContentDetails = onCall({secrets: [API_TOKEN]}, async (request) 
 
     let parsedDetails;
 
+    // Usa uma rota diferente no TMDB conforme o tipo de conteúdo
     switch(contentCategory) {
 
+        // Busca detalhes do filme, recomendações e provedores de streaming
         case "movie":
             
             url = `${BASE_URL}/movie/${contentId}?append_to_response=recommendations%2Cwatch%2Fproviders&language=${LANGUAGE}`;
@@ -73,11 +77,13 @@ export const getContentDetails = onCall({secrets: [API_TOKEN]}, async (request) 
 
             logger.info("Info from getContentDetails: Movie details fetched");
 
+            // Converte os dados pegando apenas os campos necessários
             parsedDetails = parseDetailedContent(rawMovieDetails); 
 
         break;
 
 
+        // Busca os mesmos dados pela rota de séries
         case "tv":
 
             url = `${BASE_URL}/tv/${contentId}?append_to_response=recommendations%2Cwatch%2Fproviders&language=${LANGUAGE}`;    
@@ -102,6 +108,7 @@ export const getContentDetails = onCall({secrets: [API_TOKEN]}, async (request) 
 
             logger.info("Info from getContentDetails: Series details fetched");
 
+            // Converte os dados pegando apenas os campos necessários
             parsedDetails = parseDetailedContent(rawSeriesDetails);
 
         break;

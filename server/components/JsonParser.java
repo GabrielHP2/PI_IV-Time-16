@@ -1,3 +1,6 @@
+// Autores: Gabriel Henrique Pacagnelli Pagliato
+//          Gabriel Batista Bastos
+
 package components;
 
 import java.util.HashMap;
@@ -11,6 +14,7 @@ public class JsonParser {
 
     public static HashMap<String, String> parse(String json) throws InvalidJsonContentException, UnknownOperationException {
 
+        // Pega a operação do JSON recebido
         Pattern operationRegex = Pattern.compile("\"(operation)\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = operationRegex.matcher(json);
         
@@ -18,6 +22,7 @@ public class JsonParser {
         
         HashMap<String, String> formattedBody = null;
 
+        // Chama o método de parsing de acordo com o tipo de operação recebida
         switch (matcher.group(2)) {
 
             case "login" -> formattedBody = JsonParser.parseLogin(json);
@@ -33,32 +38,67 @@ public class JsonParser {
             default -> throw new UnknownOperationException("Operation provided is not supported");
         }
 
+        // Adiciona o tipo de operação no hashmap retornado
         formattedBody.put(matcher.group(1), matcher.group(2));
 
         return formattedBody;
     }
 
-    // TODO
-    private static HashMap<String, String> parseLogin(String json) {
+    private static HashMap<String, String> parseLogin(String json)
+        throws InvalidJsonContentException {
 
-        HashMap<String, String> formattedBody = new HashMap<String, String>(4);
+        HashMap<String, String> formattedBody = new HashMap<>(3);
 
-        // Fazer o REGEX
-        Pattern loginRegex = Pattern.compile("");
+        // Pega os campos de login do JSON recebido
+        Pattern loginRegex = Pattern.compile(
+        "\"(email|password)\"\\s*:\\s*\"([^\"]*)\""
+        );
+
         Matcher matcher = loginRegex.matcher(json);
 
+        // Percorre o JSON recebido e adiciona os campos que batem com o regex
+        while (matcher.find()) {
+            formattedBody.put(matcher.group(1), matcher.group(2));
+        }
+
+        // Caso algum campo obrigatório não seja encontrado, lança uma exceção
+        if (!formattedBody.containsKey("email"))
+        throw new InvalidJsonContentException("Email field is missing");
+
+        if (!formattedBody.containsKey("password"))
+        throw new InvalidJsonContentException("Password field is missing");
 
         return formattedBody;
     }
 
-    private static HashMap<String, String> parseRegister(String json) {
-        
-        HashMap<String, String> formattedBody = new HashMap<String, String>(5);
+    private static HashMap<String, String> parseRegister(String json)
+        throws InvalidJsonContentException {
 
-        // Fazer o REGEX
-        Pattern registerRegex = Pattern.compile("");
+        HashMap<String, String> formattedBody = new HashMap<>(5);
+
+        Pattern registerRegex = Pattern.compile(
+            "\"(name|email|password|phoneNumber)\"\\s*:\\s*\"([^\"]*)\""
+        );
+
         Matcher matcher = registerRegex.matcher(json);
-        
+
+        // Percorre o JSON recebido e adiciona os campos que batem com o regex
+        while (matcher.find()) {
+            formattedBody.put(matcher.group(1), matcher.group(2));
+        }
+
+        // Caso algum campo obrigatório não seja encontrado, lança uma exceção
+        if (!formattedBody.containsKey("name"))
+            throw new InvalidJsonContentException("Name field is missing");
+
+        if (!formattedBody.containsKey("email"))
+            throw new InvalidJsonContentException("Email field is missing");
+
+        if (!formattedBody.containsKey("password"))
+            throw new InvalidJsonContentException("Password field is missing");
+
+        if (!formattedBody.containsKey("phoneNumber"))
+            throw new InvalidJsonContentException("Phone number field is missing");
 
         return formattedBody;
     }
@@ -70,8 +110,10 @@ public class JsonParser {
         Pattern resetPasswordRegex = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = resetPasswordRegex.matcher(json);
         
+        // Percorre o JSON recebido e adiciona os campos que batem com o regex
         if (matcher.find()) formattedBody.put("email", matcher.group(1));
 
+        // Caso algum campo obrigatório não seja encontrado, lança uma exceção
         if (!formattedBody.containsKey("email")) throw new InvalidJsonContentException("Email field is missing");
 
         return formattedBody;
@@ -84,8 +126,10 @@ public class JsonParser {
         Pattern changePasswordRegex = Pattern.compile("\"(password|confirmPassword)\"\\s*:\\s*\"([^\"]*)\"");
         Matcher matcher = changePasswordRegex.matcher(json);
 
+        // Percorre o JSON recebido e adiciona os campos que batem com o regex
         while (matcher.find()) formattedBody.put(matcher.group(1), matcher.group(2));
 
+        // Caso algum campo obrigatório não seja encontrado, lança uma exceção
         if (!formattedBody.containsKey("password")) throw new InvalidJsonContentException("Password field is missing");
         if (!formattedBody.containsKey("confirmPassword")) throw new InvalidJsonContentException("Confirm password field is missing");
 

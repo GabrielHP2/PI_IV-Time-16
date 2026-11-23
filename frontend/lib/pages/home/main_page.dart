@@ -33,7 +33,7 @@ Future<List<SimpleMovie>> getLaunchingContent(int page) async {
 }
 
 Future<List<SimpleMovie>> getRandomContent(int page) async {
-  final callable = FirebaseFunctions.instance.httpsCallable('getRandomContent');
+  final callable = FirebaseFunctions.instanceFor(region: "southamerica-east1").httpsCallable('getRandomContent');
   final response = await callable.call({'page': page});
 
   final data = Map<String, dynamic>.from(response.data);

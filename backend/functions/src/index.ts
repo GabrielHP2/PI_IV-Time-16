@@ -11,5 +11,5 @@ setGlobalOptions({
 
 export * from "./auth";
 export * from "./api";
-export * from "./wishlist";
 export * from "./subscription";
+export * from "./wishlist";

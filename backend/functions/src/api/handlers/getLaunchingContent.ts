@@ -1,4 +1,4 @@
-﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
+// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { API_TOKEN, BASE_URL, LANGUAGE, REGION } from "../../shared/apiConfig";
@@ -8,7 +8,6 @@ import { ResponseContentType } from "../types/responseContentType";
 
 export const getLaunchingContent = onCall({secrets: [API_TOKEN]}, async (request) => {
 
-    // Decodifica o token do usuário e verifica se ele está autenticado
     if (!request.auth) {
 
         logger.error("Error from getPopularContent: User unauthenticated");
@@ -23,7 +22,6 @@ export const getLaunchingContent = onCall({secrets: [API_TOKEN]}, async (request
         throw new HttpsError("invalid-argument", "Página inválida");
     }
     
-    // Monta a URL para buscar os filmes em cartaz
     const url = `${BASE_URL}/movie/now_playing?language=${LANGUAGE}&page=${pageNumber}&region=${REGION}`;
 
     const options = {
@@ -35,7 +33,6 @@ export const getLaunchingContent = onCall({secrets: [API_TOKEN]}, async (request
         }
     };
 
-    // Faz o fetch dos filmes em cartaz
     const rawMoviesJson = await fetch(url, options)
     .then((res) => {
 

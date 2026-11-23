@@ -1,4 +1,4 @@
-﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
+// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
@@ -7,7 +7,6 @@ import { OperationType } from "../types/operationType";
 import { StatusType } from "../types/statusType";
 import { getAuth } from "firebase-admin/auth";
 
-// Troca a senha depois que o servidor valida os dados e o Firebase encontra a conta
 export const changePassword = onCall(async (request) => {
 
     const { uid, password, confirmPassword } = request.data ?? {}
@@ -24,12 +23,10 @@ export const changePassword = onCall(async (request) => {
         throw new HttpsError("invalid-argument", "Todos os campos são obrigatórios");
     }
 
-    // Monta os dados que serão enviados ao servidor de autenticação
     const requestContent = {password: password, confirmPassword};
 
     try {
 
-        // Pede ao servidor que valide a senha nova e a confirmação
         const serverResponse = await serverConnection(OperationType.CHANGE, requestContent);
 
         if (!serverResponse) {
@@ -42,7 +39,7 @@ export const changePassword = onCall(async (request) => {
         if (serverResponse.code === StatusType.BAD_REQUEST) {
 
             logger.error(`Error from changePassword: Invalid password or confirm password- ${serverResponse.message}`);
-            throw new HttpsError("invalid-argument", "Senha ou confirmar senha inválidos");
+            throw new HttpsError("invalid-argument", "Senha ou confirmar senha inválido");
         }
 
         if (serverResponse.code === StatusType.METHOD_NOT_ALLOWED || serverResponse.code === StatusType.INTERNAL_SERVER_ERROR) {
@@ -61,7 +58,6 @@ export const changePassword = onCall(async (request) => {
 
     try {
 
-        // Com a senha validada, atualiza a conta no Firebase Auth
         await getAuth().updateUser(uid, {password: password, emailVerified: true})
         .then(() => {
 

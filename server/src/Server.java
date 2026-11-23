@@ -17,7 +17,6 @@ public class Server {
 
         if (args.length > 1) throw new IllegalArgumentException("Only the port value should be provided");
 
-        // Se um argumento for fornecido, tenta convertê-lo para um número inteiro e usá-lo como porta
         try {
 
             if (args.length == 1) port = Integer.parseInt(args[0]);
@@ -33,7 +32,6 @@ public class Server {
         
         try {
 
-            // Inicia o servidor e começa a aceitar conexões de clientes
             connectionAcceptor = new ConnectionAcceptor(port, connectedUsers);
             connectionAcceptor.start();
 
@@ -54,10 +52,8 @@ public class Server {
         Scanner scanner = new Scanner(System.in);
         String command = "";
         
-        // Loop para aguardar o comando de encerramento do servidor
         while (true) {
             
-            // Solicita ao usuário que digite o comando de encerramento do servidor
             while (true) {
                 
                 System.out.println("\nType EXIT to shutdown the server");
@@ -74,7 +70,6 @@ public class Server {
                 System.out.println("\nInvalid command");
             } 
 
-            // Fecha todas as conexões com os clientes conectados caso o comando EXIT seja recebido
             synchronized(connectedUsers) {
 
                 for (ClientConnection client : Server.connectedUsers) {

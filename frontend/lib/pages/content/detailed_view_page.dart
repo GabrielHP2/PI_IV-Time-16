@@ -17,6 +17,7 @@ class ContentDetail {
     required this.releaseDate,
     required this.rating,
     required this.platforms,
+    required this.category,
     this.similar = const [],
     this.genre = 'Não informado',
   });
@@ -29,6 +30,7 @@ class ContentDetail {
   final List<String> platforms;
   final List<Movie> similar;
   final String genre;
+  final String category;
 }
 
 class DetailedViewPage extends StatefulWidget {
@@ -67,6 +69,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
         genre: c.genre == 'Não informado' ? [] : [c.genre],
         platform: c.platforms,
         similar: c.similar,
+        category: c.category,
       );
     } else {
       final args = ModalRoute.of(context)?.settings.arguments;
@@ -82,6 +85,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
           genre: args.genre.isEmpty ? 'Não informado' : args.genre.join(', '),
           platforms: args.platform ?? const [],
           similar: args.similar,
+          category: args.category,
         );
       }
 }

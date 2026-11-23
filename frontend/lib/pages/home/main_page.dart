@@ -7,6 +7,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/simple_movie_model.dart';
+import '../../models/movie_model.dart';
 import '../../components/widgets/movie_card.dart';
 import '../../components/widgets/notification_panel.dart';
 import '../../theme/app_theme.dart';
@@ -15,27 +16,33 @@ import '../../repositories/notification_repository.dart';
 import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 
+Future<Movie> getMovieDetails(SimpleMovie simple) async {
+  final callable = FirebaseFunctions.instance.httpsCallable('getMovieDetails'); // ajuste
+  final response = await callable.call({
+    'id': simple.id,
+    'type': simple.category,
+  });
+
+  final json = Map<String, dynamic>.from(response.data);
+  json['media_type'] ??= simple.category;
+
+  return Movie.fromJson(json);
+}
+
 Future<List<SimpleMovie>> getLaunchingContent(int page) async {
-  final callable = FirebaseFunctions.instanceFor(region: "southamerica-east1").httpsCallable('getLaunchingContent');
+  final callable = FirebaseFunctions.instanceFor(
+    region: 'southamerica-east1',
+  ).httpsCallable('getLaunchingContent');
+
   final response = await callable.call({'page': page});
+  final data = Map<String, dynamic>.from(response.data as Map);
+  final results = List<dynamic>.from(data['results'] as List);
 
-  final List<dynamic> groups = response.data as List<dynamic>;
-  final List<SimpleMovie> launchingContent = [];
-
-  for (final group in groups) {
-    // Cada grupo (movie ou tv) pode ser um mapa com 'results' ou uma lista direta.
-    final List<dynamic> items = group is Map
-        ? (group['results'] as List<dynamic>)
-        : group as List<dynamic>;
-
-    for (final json in items) {
-      launchingContent.add(
-        SimpleMovie.fromJson(Map<String, dynamic>.from(json)),
-      );
-    }
-  }
-
-  return launchingContent;
+  return results
+      .map((json) => SimpleMovie.fromJson(
+            Map<String, dynamic>.from(json as Map),
+          ))
+      .toList();
 }
 
 Future<List<SimpleMovie>> getRandomContent(int page) async {

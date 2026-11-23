@@ -12,6 +12,7 @@ class Movie {
   final List<Movie> similar;
   final String banner_path;
   final String poster_path;
+  final String category;
 
   Movie ({
     required this.id,
@@ -24,6 +25,7 @@ class Movie {
     required this.genre,
     required this.platform,
     required this.similar,
+    required this.category,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class Movie {
       genre: List<String>.from(json['genre']),
       platform: json['platform'] != null ? List<String>.from(json['platform']) : null,
       similar: List<Movie>.from(json['similar'].map((x) => Movie.fromJson(x))),
+      category: json['category'],
     );
   }
 }

@@ -87,12 +87,13 @@ class _MainPageState extends State<MainPage> {
   List<SimpleMovie> lancamentos = [];
   List<SimpleMovie> populares = [];
   bool isLoading = true;
+  int _page = 1;
   
-  Future<void> carregarFilmes() async {
+  Future<void> carregarFilmes(int page) async {
     try {
       final resultados = await Future.wait<List<SimpleMovie>>([
-        getLaunchingContent(1),
-        getRandomContent(1),
+        getLaunchingContent(page),
+        getRandomContent(page),
       ]);
 
       if (!mounted) return;
@@ -100,8 +101,15 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         lancamentos = resultados[0];
         populares = resultados[1];
+        _page = page;
+        _currentLaunch = 0;
         isLoading = false;
       });
+
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+
     } catch (e) {
       if (!mounted) return;
 
@@ -113,10 +121,15 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  Future<void> _carregarProximaPagina() {
+    final proxima = _page % 5 + 1; // 1 - 2 - 3 - 4 - 5 - 1
+    return carregarFilmes(proxima);
+  }
+
   @override
   void initState() {
     super.initState();
-    carregarFilmes();
+    carregarFilmes(1);
   }
 
   @override
@@ -283,30 +296,34 @@ Future<void> _openMovie(SimpleMovie simple) async {
       ),
       body: isLoading ? const Center(
           child: CircularProgressIndicator(),)
-        : SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'Lançamentos',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+        : RefreshIndicator(
+          onRefresh: _carregarProximaPagina,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  'Lançamentos',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
+              const SizedBox(height: 16),
+              _buildCarousel(),
+              const SizedBox(height: 32),
+              _buildSectionTitle('Populares'),
+              const SizedBox(height: 16),
+              _buildHorizontalList(populares),
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildCarousel(),
-            const SizedBox(height: 32),
-            _buildSectionTitle('Populares'),
-            const SizedBox(height: 16),
-            _buildHorizontalList(populares),
-          ],
+          ),
         ),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.button,
         unselectedItemColor: Colors.grey,

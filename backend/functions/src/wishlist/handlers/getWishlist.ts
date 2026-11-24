@@ -10,6 +10,8 @@ interface WishlistDocument {
     contentId: number;
     category: ContentCategory;
     createdAt: Date;
+    banner_path?: string;
+    poster_path?: string;
 }
 
 export const getWishlist = onCall(
@@ -50,6 +52,8 @@ export const getWishlist = onCall(
                 wishlist: contents.map((content) => ({
                     contentId: content.contentId,
                     category: content.category,
+                     banner_path: content.banner_path,
+                    poster_path: content.poster_path,
                     createdAt: content.createdAt.toISOString()
                 }))
             };

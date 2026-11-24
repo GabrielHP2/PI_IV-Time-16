@@ -10,8 +10,6 @@ class WishlistService {
 
   final FirebaseFunctions _functions;
 
-  static const String _imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
-
   Future<void> addToWishlist(Movie movie) async {
     final identity = _getIdentity(movie);
     await _call(
@@ -76,9 +74,13 @@ class WishlistService {
         case 'unauthenticated':
           throw Exception('Faça login para acessar sua lista de desejos.');
         case 'unavailable':
-          throw Exception('Serviço indisponível. Verifique os emuladores Firebase.');
+          throw Exception(
+            'Serviço indisponível. Verifique os emuladores Firebase.',
+          );
         case 'invalid-argument':
           throw Exception(error.message ?? 'Os dados enviados são inválidos.');
+        case 'not-found':
+          throw Exception('A função "$functionName" não foi encontrada.');
         default:
           throw Exception(error.message ?? 'Falha ao comunicar com o servidor.');
       }
@@ -92,42 +94,14 @@ class WishlistService {
     );
     if (response is! Map) return null;
 
-    final data = Map<String, dynamic>.from(response);
-    final title = (data['title'] ?? data['name'] ?? '').toString().trim();
-    if (title.isEmpty) return null;
-
-    final rawGenres = data['genre'];
-    final genres = rawGenres is List
-        ? rawGenres
-            .map((item) => item.toString())
-            .where((item) => item.isNotEmpty)
-            .toList()
-        : <String>[];
-
-    final rawPlatforms = data['platform'];
-    final platforms = rawPlatforms is List
-        ? rawPlatforms
-            .whereType<Map>()
-            .map((item) => item['name']?.toString() ?? '')
-            .where((name) => name.isNotEmpty)
-            .toList()
-        : <String>[];
-
-    final posterPath = data['poster_path']?.toString() ?? '';
-    final rawRating = data['rating'];
-
-    return Movie(
-      id: '$category:$id',
-      title: title,
-      synopsis: data['synopsis']?.toString() ?? '',
-      releaseDate:
-          (data['release_date'] ?? data['first_air_date'] ?? '').toString(),
-      rating: rawRating is num ? rawRating.toDouble() : 0,
-      genre: genres.join(', '),
-      platforms: platforms,
-      imageUrl: posterPath.isEmpty ? '' : '$_imageBaseUrl$posterPath',
-      category: category,
-    );
+    try {
+      return Movie.fromApiMap(
+        Map<String, dynamic>.from(response),
+        category: category,
+      );
+    } on FormatException {
+      return null;
+    }
   }
 
   ({int id, String category}) _getIdentity(Movie movie) {

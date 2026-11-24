@@ -1,4 +1,4 @@
-﻿// Autor: Gabriel Henrique Pacagnelli Pagliato
+// Autor: Gabriel Henrique Pacagnelli Pagliato
 
 import { HttpsError } from "firebase-functions/https";
 import { CombinationType } from "../types/combinationType";
@@ -19,12 +19,17 @@ import * as logger from "firebase-functions/logger";
 */
 
 export function subscriptionPlanner(
-    currentPlat: Map<number, number>,
+    currentPlatforms: number[][],
+    currentCategories: ("movie" | "tv")[],
     desiredPlatforms: number[][],
     platformsPrice: PlatformPriceType[],
     platformsId: number[],
     currentEx: number,
     desiredEx: number): PlanType {
+
+    const budgetTolerance = 0.20;
+    const adjustedBudget =
+        desiredEx + (desiredEx * budgetTolerance);
 
     // Cria um array para marcar os conteúdos desejados que já foram cobertos
     const coveredDesiredContents: boolean[] = [];
@@ -33,6 +38,27 @@ export function subscriptionPlanner(
     for (let i = 0; i < desiredPlatforms.length; i++) {
 
         coveredDesiredContents.push(false);
+    }
+
+    // Filmes em andamento podem sair da próxima combinação depois de serem cobertos
+    // Séries em andamento são consideradas necessárias por três meses no planejamento
+    const coveredCurrentMovies: boolean[] = [];
+
+    for (let i = 0; i < currentPlatforms.length; i++) {
+
+        coveredCurrentMovies.push(false);
+    }
+
+    let repeatedPlatforms: number[] = [];
+
+    // Define três meses de duração para cada série em andamento
+    const remainingTvMonths: number[] = [];
+
+    for (let i = 0; i < currentPlatforms.length; i++) {
+
+        if (currentCategories[i] === "tv") remainingTvMonths.push(3);
+
+        else remainingTvMonths.push(0);
     }
 
     const months: MonthType[] = [];
@@ -58,6 +84,7 @@ export function subscriptionPlanner(
     // Escolhe as plataformas de cada mês do planejamento
     for (let monthNumber = 1; monthNumber <= 8; monthNumber++) {
 
+        const repeatMonth = repeatedPlatforms.length > 0;
         let bestCombination: CombinationType | null = null;
 
         // Compara todas as combinações possíveis para encontrar a melhor opção deste mês
@@ -66,20 +93,64 @@ export function subscriptionPlanner(
             // Ignora combinações sem plataformas
             if (selectedPlatforms.length === 0) continue;
 
+            if (repeatedPlatforms.length > 0) {
+
+                if (selectedPlatforms.length !== repeatedPlatforms.length) continue;
+
+                let hasEveryRepeatedPlatform = true;
+
+                for (const platformId of repeatedPlatforms) {
+
+                    let platformWasSelected = false;
+
+                    for (const selectedPlatform of selectedPlatforms) {
+
+                        if (selectedPlatform.tmdbId === platformId) {
+
+                            platformWasSelected = true;
+                            break;
+                        }
+                    }
+
+                    if (!platformWasSelected) {
+
+                        hasEveryRepeatedPlatform = false;
+                        break;
+                    }
+                }
+
+                if (!hasEveryRepeatedPlatform) continue;
+            }
+
             let monthlyExpense = 0;
             let currentCoverage = 0;
             let desiredCoverage = 0;
             let subscribedCoverage = 0;
 
-            // Calcula o preço e a cobertura atual da combinação
+            // Calcula o preço da combinação
             for (const platform of selectedPlatforms) {
 
                 monthlyExpense += platform.price;
-                currentCoverage += currentPlat.get(platform.tmdbId) ?? 0;
 
-                if (platformsId.includes(platform.tmdbId)) {
+                if (platformsId.includes(platform.tmdbId)) subscribedCoverage++;
+            }
 
-                    subscribedCoverage++;
+            // Conta filmes pendentes e séries em andamento cobertos pela combinação
+            for (let i = 0; i < currentPlatforms.length; i++) {
+
+                if (currentCategories[i] === "movie" && coveredCurrentMovies[i]) continue;
+
+                if (currentCategories[i] === "tv" && remainingTvMonths[i] <= 0) continue;
+
+                const contentPlatformIds = currentPlatforms[i];
+
+                for (const selectedPlatform of selectedPlatforms) {
+
+                    if (contentPlatformIds.includes(selectedPlatform.tmdbId)) {
+
+                        currentCoverage++;
+                        break;
+                    }
                 }
             }
 
@@ -101,8 +172,13 @@ export function subscriptionPlanner(
                 }
             }
 
+            // Não recomenda uma plataforma que não cobre nenhum conteúdo
+            // atual ou desejado ainda pendente
+            if (currentCoverage === 0 && desiredCoverage === 0) continue;
+
             // Junta as plataformas e os valores calculados para facilitar a comparação
             const combination: CombinationType = {
+
                 platformIds: selectedPlatforms.map((platform) => platform.tmdbId),
                 platformNames: selectedPlatforms.map((platform) => platform.name),
                 monthlyExpense: monthlyExpense,
@@ -111,42 +187,202 @@ export function subscriptionPlanner(
                 subscribedCoverage: subscribedCoverage
             };
 
-            // A primeira opção vira a referência para comparar as próximas
-            if (bestCombination === null) {
+            const combinationIsInsideBudget = combination.monthlyExpense <= adjustedBudget;
+
+            const bestCombinationIsInsideBudget =
+                bestCombination !== null &&
+                bestCombination.monthlyExpense <= adjustedBudget;
+
+            if (bestCombination === null) bestCombination = combination;
+
+            else if (combinationIsInsideBudget && !bestCombinationIsInsideBudget) {
 
                 bestCombination = combination;
-                continue;
             }
 
-            // Compara as combinações priorizando cobertura atual, conteúdos desejados,
-            // menor preço, plataformas já assinadas e menor quantidade de plataformas
-            if (combination.currentCoverage > bestCombination.currentCoverage ||
-                (combination.currentCoverage === bestCombination.currentCoverage &&
+            else if (combinationIsInsideBudget === bestCombinationIsInsideBudget) {
 
-                combination.desiredCoverage > bestCombination.desiredCoverage) ||
-                (combination.currentCoverage === bestCombination.currentCoverage &&
+                // Compara as combinações dentro do mesmo grupo:
+                // cobertura atual, conteúdos desejados, menor preço,
+                // plataformas já assinadas e menor quantidade de plataformas
+                if (
+                    combination.currentCoverage >
+                        bestCombination.currentCoverage ||
+                    (
+                        combination.currentCoverage ===
+                            bestCombination.currentCoverage &&
+                        combination.desiredCoverage >
+                            bestCombination.desiredCoverage
+                    ) ||
+                    (
+                        combination.currentCoverage ===
+                            bestCombination.currentCoverage &&
+                        combination.desiredCoverage ===
+                            bestCombination.desiredCoverage &&
+                        combination.monthlyExpense <
+                            bestCombination.monthlyExpense
+                    ) ||
+                    (
+                        combination.currentCoverage ===
+                            bestCombination.currentCoverage &&
+                        combination.desiredCoverage ===
+                            bestCombination.desiredCoverage &&
+                        combination.monthlyExpense ===
+                            bestCombination.monthlyExpense &&
+                        (
+                            combination.subscribedCoverage >
+                                bestCombination.subscribedCoverage ||
+                            (
+                                combination.subscribedCoverage ===
+                                    bestCombination.subscribedCoverage &&
+                                combination.platformIds.length <
+                                    bestCombination.platformIds.length
+                            )
+                        )
+                    )
+                ) {
 
-                combination.desiredCoverage === bestCombination.desiredCoverage &&
-                combination.monthlyExpense < bestCombination.monthlyExpense) ||
-
-                (combination.currentCoverage === bestCombination.currentCoverage &&
-                combination.desiredCoverage === bestCombination.desiredCoverage &&
-
-                combination.monthlyExpense === bestCombination.monthlyExpense &&
-                (combination.subscribedCoverage > bestCombination.subscribedCoverage ||
-
-                (combination.subscribedCoverage === bestCombination.subscribedCoverage &&
-                combination.platformIds.length < bestCombination.platformIds.length)))) {
-
-                bestCombination = combination;
+                    bestCombination = combination;
+                }
             }
         }
 
-        // Lança um erro caso nenhuma combinação possa ser selecionada
+        // Fallback para escolher uma combinação quando a seleção normal não encontra opção
+        // O placeholder ignora o tempo restante das séries, a repetição de plataformas e o limite de gasto
         if (bestCombination === null) {
 
-            logger.error("Error from subscriptionPlanner: Platforms ares missing");
-            throw new HttpsError("failed-precondition", "Não há plataformas cadastradas");
+            let placeholder: CombinationType | null = null;
+
+            for (const selectedPlatforms of combinations) {
+
+                if (selectedPlatforms.length === 0) continue;
+
+                let monthlyExpense = 0;
+                let currentCoverage = 0;
+                let desiredCoverage = 0;
+                let subscribedCoverage = 0;
+
+                for (const platform of selectedPlatforms) {
+
+                    monthlyExpense += platform.price;
+
+                    if (platformsId.includes(platform.tmdbId)) subscribedCoverage++;
+                }
+
+                // Conteúdos atuais pendentes são usados para o placeholder
+                for (let i = 0; i < currentPlatforms.length; i++) {
+
+                    if (currentCategories[i] === "movie" && coveredCurrentMovies[i]) continue;
+
+                    const contentPlatformIds = currentPlatforms[i];
+
+                    for (const selectedPlatform of selectedPlatforms) {
+
+                        if (contentPlatformIds.includes(selectedPlatform.tmdbId)) {
+
+                            currentCoverage++;
+                            break;
+                        }
+                    }
+                }
+
+                // Conteúdos desejados pendentes são usados para o placeholder
+                for (let i = 0; i < desiredPlatforms.length; i++) {
+
+                    if (coveredDesiredContents[i]) continue;
+
+                    const contentPlatformIds = desiredPlatforms[i];
+
+                    for (const selectedPlatform of selectedPlatforms) {
+
+                        if (contentPlatformIds.includes(selectedPlatform.tmdbId)) {
+
+                            desiredCoverage++;
+                            break;
+                        }
+                    }
+                }
+
+                const combination: CombinationType = {
+
+                    platformIds: selectedPlatforms.map((platform) => platform.tmdbId),
+                    platformNames: selectedPlatforms.map((platform) => platform.name),
+                    monthlyExpense: monthlyExpense,
+                    currentCoverage: currentCoverage,
+                    desiredCoverage: desiredCoverage,
+                    subscribedCoverage: subscribedCoverage
+                };
+
+                if (placeholder === null) placeholder = combination;
+                
+                else if (
+                    combination.currentCoverage >
+                        placeholder.currentCoverage ||
+                    (
+                        combination.currentCoverage ===
+                            placeholder.currentCoverage &&
+                        combination.desiredCoverage >
+                            placeholder.desiredCoverage
+                    ) ||
+                    (
+                        combination.currentCoverage ===
+                            placeholder.currentCoverage &&
+                        combination.desiredCoverage ===
+                            placeholder.desiredCoverage &&
+                        combination.monthlyExpense <
+                            placeholder.monthlyExpense
+                    ) ||
+                    (
+                        combination.currentCoverage ===
+                            placeholder.currentCoverage &&
+                        combination.desiredCoverage ===
+                            placeholder.desiredCoverage &&
+                        combination.monthlyExpense ===
+                            placeholder.monthlyExpense &&
+                        (
+                            combination.subscribedCoverage >
+                                placeholder.subscribedCoverage ||
+                            (
+                                combination.subscribedCoverage ===
+                                    placeholder.subscribedCoverage &&
+                                combination.platformIds.length <
+                                    placeholder.platformIds.length
+                            )
+                        )
+                    )
+                ) {
+
+                    placeholder = combination;
+                }
+            }
+
+            if (placeholder === null) {
+
+                logger.error("Error from subscriptionPlanner: Platforms are missing");
+                throw new HttpsError("failed-precondition", "Não há plataformas cadastradas");
+            }
+
+            bestCombination = placeholder;
+        }
+
+        if (repeatMonth) repeatedPlatforms = [];
+
+        // Marca filmes cobertos neste mês como atendidos
+        // Séries continuam contando enquanto houver meses restantes
+        for (let i = 0; i < currentPlatforms.length; i++) {
+
+            if (currentCategories[i] !== "movie" || coveredCurrentMovies[i]) continue;
+
+            const contentPlatformIds = currentPlatforms[i];
+
+            for (const platformId of bestCombination.platformIds) {
+
+                if (contentPlatformIds.includes(platformId)) {
+
+                    coveredCurrentMovies[i] = true;
+                    break;
+                }
+            }
         }
 
         let desiredCoverageInMonth = 0;
@@ -169,8 +405,25 @@ export function subscriptionPlanner(
             }
         }
 
+        // Se houver pelo menos quatro conteúdos cobertos no mês,
+        // mantém todas as plataformas da combinação por mais um mês
+        if (!repeatMonth && bestCombination.currentCoverage + desiredCoverageInMonth >= 4) {
+
+            repeatedPlatforms = bestCombination.platformIds.slice();
+        }
+
+        // Reduz o tempo restante das séries depois de cada mês
+        for (let i = 0; i < remainingTvMonths.length; i++) {
+
+            if (currentCategories[i] === "tv" && remainingTvMonths[i] > 0) {
+
+                remainingTvMonths[i] = remainingTvMonths[i] - 1;
+            }
+        }
+
         // Adiciona o resultado do mês e verifica se o gasto está dentro do limite
         months.push({
+
             month: monthNumber,
             platformIds: bestCombination.platformIds,
             platformNames: bestCombination.platformNames,
@@ -178,18 +431,22 @@ export function subscriptionPlanner(
             currentCoverage: bestCombination.currentCoverage,
             desiredCoverage: desiredCoverageInMonth,
             status:
-                bestCombination.monthlyExpense <= desiredEx
+                bestCombination.monthlyExpense <= adjustedBudget
                     ? "ok"
                     : "budget_exceeded"
         });
     }
 
+    let planStatus = "ok";
+
+    for (const month of months) {
+
+        if (month.status === "budget_exceeded") planStatus = "budget_exceeded";
+    }
+
     const result = {
-        // Define o status geral com base no status do primeiro mês
-        status:
-            months[0].status === "ok"
-                ? "ok"
-                : "budget_exceeded",
+        
+        status: planStatus,
         months: months,
         currentMonthlyExpense: currentEx,
         desiredMonthlyExpense: desiredEx,
@@ -197,6 +454,6 @@ export function subscriptionPlanner(
     };
 
     logger.info("Info from setSubscriptionPlan: Subscription plan generated");
-
+    
     return result;
 }

@@ -82,12 +82,19 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final PageController _pageController = PageController();
+  final ScrollController _popularesController = ScrollController();
   int _currentLaunch = 0;
 
   List<SimpleMovie> lancamentos = [];
   List<SimpleMovie> populares = [];
   bool isLoading = true;
   int _page = 1;
+
+  int _launchPage = 1;
+  int _popularPage = 1;
+  bool _loadingLaunch = false;
+  bool _loadingPopular = false;
+  
   
   Future<void> carregarFilmes(int page) async {
     try {
@@ -121,6 +128,84 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  Future<void> _mudarPaginaLancamentos(int delta) async {
+    if (_loadingLaunch) return;
+
+    // delta = +1 (próxima) ou -1 (anterior); cicla entre 1 e 5.
+    final nova = (_launchPage - 1 + delta) % 5 + 1;
+
+    setState(() => _loadingLaunch = true);
+
+    try {
+      final novos = await getLaunchingContent(nova);
+      if (!mounted) return;
+
+      setState(() {
+        lancamentos = novos;
+        _launchPage = nova;
+        _currentLaunch = 0;
+        _loadingLaunch = false;
+      });
+
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar lançamentos (página $nova): $e');
+      if (!mounted) return;
+
+      setState(() => _loadingLaunch = false);
+      _showPendingMessage('Não foi possível carregar os lançamentos.');
+    }
+  }
+
+  Future<void> _mudarPaginaPopulares(int delta) async {
+    if (_loadingPopular) return;
+
+    final nova = (_popularPage - 1 + delta) % 5 + 1;
+
+    setState(() => _loadingPopular = true);
+
+    try {
+      final novos = await getRandomContent(nova);
+      if (!mounted) return;
+
+      setState(() {
+        populares = novos;
+        _popularPage = nova;
+        _loadingPopular = false;
+      });
+
+      if (_popularesController.hasClients) {
+        _popularesController.jumpTo(0);
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar populares (página $nova): $e');
+      if (!mounted) return;
+
+    setState(() => _loadingPopular = false);
+      _showPendingMessage('Não foi possível carregar os populares.');
+    }
+  }
+
+  Widget _buildArrow({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black54,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white),
+      ),
+    );
+  }
+
   Future<void> _carregarProximaPagina() {
     final proxima = _page % 5 + 1; // 1 - 2 - 3 - 4 - 5 - 1
     return carregarFilmes(proxima);
@@ -135,7 +220,8 @@ class _MainPageState extends State<MainPage> {
   @override
   void dispose() {
     _pageController.dispose();
-    super.dispose();
+    _popularesController.dispose();
+    super.dispose(); 
   }
 
   void _showPendingMessage(String message) {
@@ -352,24 +438,58 @@ Future<void> _openMovie(SimpleMovie simple) async {
       children: [
         SizedBox(
           height: 220,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: lancamentos.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentLaunch = index;
-              });
-            },
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SimpleMovieCard(
-                  movie: lancamentos[index],
-                  isLarge: true,
-                  onTap: () => _openMovie(lancamentos[index]),
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: lancamentos.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentLaunch = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SimpleMovieCard(
+                      movie: lancamentos[index],
+                      isLarge: true,
+                      onTap: () => _openMovie(lancamentos[index]),
+                    ),
+                  );
+                },
+              ),
+              Positioned(
+                left: 4,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _buildArrow(
+                    icon: Icons.chevron_left,
+                    tooltip: 'Página anterior',
+                    onPressed:
+                    _loadingLaunch ? null : () => _mudarPaginaLancamentos(-1),
+                  ),
                 ),
-              );
-            },
+              ),
+              Positioned(
+                right: 4,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _buildArrow(
+                    icon: Icons.chevron_right,
+                    tooltip: 'Próxima página',
+                    onPressed:
+                    _loadingLaunch ? null : () => _mudarPaginaLancamentos(1),
+                  ),
+                ),
+              ),
+              if (_loadingLaunch)
+              const Positioned.fill(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -411,19 +531,54 @@ Future<void> _openMovie(SimpleMovie simple) async {
   Widget _buildHorizontalList(List<SimpleMovie> movies) {
     return SizedBox(
       height: 180,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: movies.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: SimpleMovieCard(
-              movie: movies[index],
-              onTap: () => _openMovie(movies[index]),
+      child: Stack(
+        children: [
+          ListView.builder(
+            controller: _popularesController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: movies.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: SimpleMovieCard(
+                  movie: movies[index],
+                  onTap: () => _openMovie(movies[index]),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            left: 4,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _buildArrow(
+                icon: Icons.chevron_left,
+                tooltip: 'Página anterior',
+                onPressed:
+                  _loadingPopular ? null : () => _mudarPaginaPopulares(-1),
+              ),
             ),
-          );
-        },
+          ),
+          Positioned(
+            right: 4,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: _buildArrow(
+                icon: Icons.chevron_right,
+                tooltip: 'Próxima página',
+                onPressed:
+                  _loadingPopular ? null : () => _mudarPaginaPopulares(1),
+              ),
+            ),
+          ),
+          if (_loadingPopular)
+            const Positioned.fill(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }

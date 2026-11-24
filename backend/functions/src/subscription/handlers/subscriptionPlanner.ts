@@ -40,8 +40,8 @@ export function subscriptionPlanner(
         coveredDesiredContents.push(false);
     }
 
-    // Filmes em andamento podem sair da próxima combinação depois de serem cobertos.
-    // Séries em andamento continuam sendo necessárias em todos os meses.
+    // Filmes em andamento podem sair da próxima combinação depois de serem cobertos
+    // Séries em andamento são consideradas necessárias por três meses no planejamento
     const coveredCurrentMovies: boolean[] = [];
 
     for (let i = 0; i < currentPlatforms.length; i++) {
@@ -51,19 +51,14 @@ export function subscriptionPlanner(
 
     let repeatedPlatforms: number[] = [];
 
-    // Cada série termina após três meses no planejamento.
+    // Define três meses de duração para cada série em andamento
     const remainingTvMonths: number[] = [];
 
     for (let i = 0; i < currentPlatforms.length; i++) {
 
-        if (currentCategories[i] === "tv") {
+        if (currentCategories[i] === "tv") remainingTvMonths.push(3);
 
-            remainingTvMonths.push(3);
-        }
-        else {
-
-            remainingTvMonths.push(0);
-        }
+        else remainingTvMonths.push(0);
     }
 
     const months: MonthType[] = [];
@@ -100,10 +95,7 @@ export function subscriptionPlanner(
 
             if (repeatedPlatforms.length > 0) {
 
-                if (selectedPlatforms.length !== repeatedPlatforms.length) {
-
-                    continue;
-                }
+                if (selectedPlatforms.length !== repeatedPlatforms.length) continue;
 
                 let hasEveryRepeatedPlatform = true;
 
@@ -140,40 +132,21 @@ export function subscriptionPlanner(
 
                 monthlyExpense += platform.price;
 
-                if (platformsId.includes(platform.tmdbId)) {
-
-                    subscribedCoverage++;
-                }
+                if (platformsId.includes(platform.tmdbId)) subscribedCoverage++;
             }
 
             // Conta filmes pendentes e séries em andamento cobertos pela combinação
             for (let i = 0; i < currentPlatforms.length; i++) {
 
-                if (
-                    currentCategories[i] === "movie" &&
-                    coveredCurrentMovies[i]
-                ) {
+                if (currentCategories[i] === "movie" && coveredCurrentMovies[i]) continue;
 
-                    continue;
-                }
-
-                if (
-                    currentCategories[i] === "tv" &&
-                    remainingTvMonths[i] <= 0
-                ) {
-
-                    continue;
-                }
+                if (currentCategories[i] === "tv" && remainingTvMonths[i] <= 0) continue;
 
                 const contentPlatformIds = currentPlatforms[i];
 
                 for (const selectedPlatform of selectedPlatforms) {
 
-                    if (
-                        contentPlatformIds.includes(
-                            selectedPlatform.tmdbId
-                        )
-                    ) {
+                    if (contentPlatformIds.includes(selectedPlatform.tmdbId)) {
 
                         currentCoverage++;
                         break;
@@ -201,13 +174,11 @@ export function subscriptionPlanner(
 
             // Não recomenda uma plataforma que não cobre nenhum conteúdo
             // atual ou desejado ainda pendente
-            if (currentCoverage === 0 && desiredCoverage === 0) {
-
-                continue;
-            }
+            if (currentCoverage === 0 && desiredCoverage === 0) continue;
 
             // Junta as plataformas e os valores calculados para facilitar a comparação
             const combination: CombinationType = {
+
                 platformIds: selectedPlatforms.map((platform) => platform.tmdbId),
                 platformNames: selectedPlatforms.map((platform) => platform.name),
                 monthlyExpense: monthlyExpense,
@@ -216,28 +187,20 @@ export function subscriptionPlanner(
                 subscribedCoverage: subscribedCoverage
             };
 
-            const combinationIsInsideBudget =
-                combination.monthlyExpense <= adjustedBudget;
+            const combinationIsInsideBudget = combination.monthlyExpense <= adjustedBudget;
 
             const bestCombinationIsInsideBudget =
                 bestCombination !== null &&
                 bestCombination.monthlyExpense <= adjustedBudget;
 
-            if (bestCombination === null) {
+            if (bestCombination === null) bestCombination = combination;
+
+            else if (combinationIsInsideBudget && !bestCombinationIsInsideBudget) {
 
                 bestCombination = combination;
             }
-            else if (
-                combinationIsInsideBudget &&
-                !bestCombinationIsInsideBudget
-            ) {
 
-                bestCombination = combination;
-            }
-            else if (
-                combinationIsInsideBudget ===
-                bestCombinationIsInsideBudget
-            ) {
+            else if (combinationIsInsideBudget === bestCombinationIsInsideBudget) {
 
                 // Compara as combinações dentro do mesmo grupo:
                 // cobertura atual, conteúdos desejados, menor preço,
@@ -284,8 +247,8 @@ export function subscriptionPlanner(
             }
         }
 
-        // Fallback para garantir que nenhum mês fique sem recomendação.
-        // O placeholder ignora a duração das séries e a extensão por volume.
+        // Fallback para escolher uma combinação quando a seleção normal não encontra opção
+        // O placeholder ignora o tempo restante das séries, a repetição de plataformas e o limite de gasto
         if (bestCombination === null) {
 
             let placeholder: CombinationType | null = null;
@@ -303,32 +266,19 @@ export function subscriptionPlanner(
 
                     monthlyExpense += platform.price;
 
-                    if (platformsId.includes(platform.tmdbId)) {
-
-                        subscribedCoverage++;
-                    }
+                    if (platformsId.includes(platform.tmdbId)) subscribedCoverage++;
                 }
 
-                // Filmes pendentes são usados para o placeholder.
+                // Conteúdos atuais pendentes são usados para o placeholder
                 for (let i = 0; i < currentPlatforms.length; i++) {
 
-                    if (
-                        currentCategories[i] === "movie" &&
-                        coveredCurrentMovies[i]
-                    ) {
-
-                        continue;
-                    }
+                    if (currentCategories[i] === "movie" && coveredCurrentMovies[i]) continue;
 
                     const contentPlatformIds = currentPlatforms[i];
 
                     for (const selectedPlatform of selectedPlatforms) {
 
-                        if (
-                            contentPlatformIds.includes(
-                                selectedPlatform.tmdbId
-                            )
-                        ) {
+                        if (contentPlatformIds.includes(selectedPlatform.tmdbId)) {
 
                             currentCoverage++;
                             break;
@@ -336,7 +286,7 @@ export function subscriptionPlanner(
                     }
                 }
 
-                // Conteúdos desejados pendentes são usados para o placeholder.
+                // Conteúdos desejados pendentes são usados para o placeholder
                 for (let i = 0; i < desiredPlatforms.length; i++) {
 
                     if (coveredDesiredContents[i]) continue;
@@ -345,11 +295,7 @@ export function subscriptionPlanner(
 
                     for (const selectedPlatform of selectedPlatforms) {
 
-                        if (
-                            contentPlatformIds.includes(
-                                selectedPlatform.tmdbId
-                            )
-                        ) {
+                        if (contentPlatformIds.includes(selectedPlatform.tmdbId)) {
 
                             desiredCoverage++;
                             break;
@@ -358,22 +304,17 @@ export function subscriptionPlanner(
                 }
 
                 const combination: CombinationType = {
-                    platformIds: selectedPlatforms.map(
-                        (platform) => platform.tmdbId
-                    ),
-                    platformNames: selectedPlatforms.map(
-                        (platform) => platform.name
-                    ),
+
+                    platformIds: selectedPlatforms.map((platform) => platform.tmdbId),
+                    platformNames: selectedPlatforms.map((platform) => platform.name),
                     monthlyExpense: monthlyExpense,
                     currentCoverage: currentCoverage,
                     desiredCoverage: desiredCoverage,
                     subscribedCoverage: subscribedCoverage
                 };
 
-                if (placeholder === null) {
-
-                    placeholder = combination;
-                }
+                if (placeholder === null) placeholder = combination;
+                
                 else if (
                     combination.currentCoverage >
                         placeholder.currentCoverage ||
@@ -417,14 +358,8 @@ export function subscriptionPlanner(
 
             if (placeholder === null) {
 
-                logger.error(
-                    "Error from subscriptionPlanner: Platforms are missing"
-                );
-
-                throw new HttpsError(
-                    "failed-precondition",
-                    "Não há plataformas cadastradas"
-                );
+                logger.error("Error from subscriptionPlanner: Platforms are missing");
+                throw new HttpsError("failed-precondition", "Não há plataformas cadastradas");
             }
 
             bestCombination = placeholder;
@@ -432,17 +367,11 @@ export function subscriptionPlanner(
 
         if (repeatMonth) repeatedPlatforms = [];
 
-        // Marca filmes já assistidos neste mês como atendidos
-        // Séries continuam contando em todos os meses
+        // Marca filmes cobertos neste mês como atendidos
+        // Séries continuam contando enquanto houver meses restantes
         for (let i = 0; i < currentPlatforms.length; i++) {
 
-            if (
-                currentCategories[i] !== "movie" ||
-                coveredCurrentMovies[i]
-            ) {
-
-                continue;
-            }
+            if (currentCategories[i] !== "movie" || coveredCurrentMovies[i]) continue;
 
             const contentPlatformIds = currentPlatforms[i];
 
@@ -478,30 +407,23 @@ export function subscriptionPlanner(
 
         // Se houver pelo menos quatro conteúdos cobertos no mês,
         // mantém todas as plataformas da combinação por mais um mês
-        if (
-            !repeatMonth &&
-            bestCombination.currentCoverage +
-            desiredCoverageInMonth >= 4
-        ) {
-            repeatedPlatforms =
-                bestCombination.platformIds.slice();
+        if (!repeatMonth && bestCombination.currentCoverage + desiredCoverageInMonth >= 4) {
+
+            repeatedPlatforms = bestCombination.platformIds.slice();
         }
 
         // Reduz o tempo restante das séries depois de cada mês
         for (let i = 0; i < remainingTvMonths.length; i++) {
 
-            if (
-                currentCategories[i] === "tv" &&
-                remainingTvMonths[i] > 0
-            ) {
+            if (currentCategories[i] === "tv" && remainingTvMonths[i] > 0) {
 
-                remainingTvMonths[i] =
-                    remainingTvMonths[i] - 1;
+                remainingTvMonths[i] = remainingTvMonths[i] - 1;
             }
         }
 
         // Adiciona o resultado do mês e verifica se o gasto está dentro do limite
         months.push({
+
             month: monthNumber,
             platformIds: bestCombination.platformIds,
             platformNames: bestCombination.platformNames,
@@ -519,13 +441,11 @@ export function subscriptionPlanner(
 
     for (const month of months) {
 
-        if (month.status === "budget_exceeded") {
-
-            planStatus = "budget_exceeded";
-        }
+        if (month.status === "budget_exceeded") planStatus = "budget_exceeded";
     }
 
     const result = {
+        
         status: planStatus,
         months: months,
         currentMonthlyExpense: currentEx,

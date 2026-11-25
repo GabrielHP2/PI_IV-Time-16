@@ -4,8 +4,10 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../../models/simple_movie_model.dart';
+import '../../components/widgets/movie_card.dart';
+import '../../repositories/content_repository.dart';
 import '../../models/movie_model.dart';
-import '../../components/widgets/content_card.dart';
 import '../../repositories/wishlist_repository.dart';
 import '../../routes.dart';
 
@@ -28,7 +30,7 @@ class ContentDetail {
   final String releaseDate;
   final double rating;
   final List<String> platforms;
-  final List<Movie> similar;
+  final List<SimpleMovie> similar;
   final String genre;
   final String category;
 }
@@ -47,6 +49,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
   late ContentDetail _content;
   bool _contentInitialized = false;
   Movie? _movie;
+    bool _isLoading = false;
 
   @override
   void didChangeDependencies() {
@@ -74,7 +77,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
     } else {
       final args = ModalRoute.of(context)?.settings.arguments;
 
-      if (args is Movie) {
+            if (args is Movie) {
         _movie = args;
         _content = ContentDetail(
           id: args.id,
@@ -87,6 +90,29 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
           similar: args.similar,
           category: args.category,
         );
+      } else if (args is SimpleMovie) {
+        // Veio só id, categoria e imagens: busca os detalhes completos.
+        _content = ContentDetail(
+          id: args.id,
+          title: '',
+          synopsis: '',
+          releaseDate: '',
+          rating: 0,
+          platforms: const [],
+          category: args.category,
+        );
+        _isLoading = true;
+        _loadDetails(args);
+      } else {
+        _content = const ContentDetail(
+          id: 0,
+          title: 'Conteúdo indisponível',
+          synopsis: '',
+          releaseDate: '',
+          rating: 0,
+          platforms: [],
+          category: 'movie',
+        );
       }
 }
 
@@ -96,6 +122,41 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
     }
 
     _contentInitialized = true;
+  }
+
+  Future<void> _loadDetails(SimpleMovie simple) async {
+    try {
+      final movie = await ContentRepository.getMovieDetails(simple);
+      if (!mounted) return;
+
+      setState(() {
+        _movie = movie;
+        _content = ContentDetail(
+          id: movie.id,
+          title: movie.title,
+          synopsis: movie.synopsis ?? 'Sinopse não disponível.',
+          releaseDate: movie.release_date ?? 'Não informado',
+          rating: movie.rating,
+          genre:
+              movie.genre.isEmpty ? 'Não informado' : movie.genre.join(', '),
+          platforms: movie.platform ?? const [],
+          similar: movie.similar,
+          category: movie.category,
+        );
+        isSaved = WishlistRepository.contains(movie.id);
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Erro ao carregar detalhes: $e');
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível carregar os detalhes.'),
+        ),
+      );
+    }
   }
 
   void _toggleWishlist() {
@@ -159,7 +220,9 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
           onPressed: () => Navigator.maybePop(context),
         ),
       ),
-      body: ListView(
+      body: _isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
@@ -268,9 +331,8 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 10),
           SizedBox(
-            height: 88,
+            height: 180,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _content.similar.length,
@@ -278,7 +340,7 @@ class _DetailedViewPageState extends State<DetailedViewPage> {
               itemBuilder: (context, index) {
                 final similar = _content.similar[index];
 
-                return ContentCard(
+                return SimpleMovieCard(
                   movie: similar,
                   onTap: () => Navigator.pushNamed(
                     context,

@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
+import '../../repositories/content_repository.dart';
 import '../../models/simple_movie_model.dart';
 import '../../models/movie_model.dart';
 import '../../components/widgets/movie_card.dart';
@@ -88,7 +89,6 @@ class _MainPageState extends State<MainPage> {
   List<SimpleMovie> lancamentos = [];
   List<SimpleMovie> populares = [];
   bool isLoading = true;
-  int _page = 1;
 
   int _launchPage = 1;
   int _popularPage = 1;
@@ -108,7 +108,8 @@ class _MainPageState extends State<MainPage> {
       setState(() {
         lancamentos = resultados[0];
         populares = resultados[1];
-        _page = page;
+        _launchPage = page;
+        _popularPage = page;
         _currentLaunch = 0;
         isLoading = false;
       });
@@ -206,11 +207,6 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Future<void> _carregarProximaPagina() {
-    final proxima = _page % 5 + 1; // 1 - 2 - 3 - 4 - 5 - 1
-    return carregarFilmes(proxima);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -239,7 +235,7 @@ Future<void> _openMovie(SimpleMovie simple) async {
   );
 
   try {
-    final movie = await getMovieDetails(simple);
+      final movie = await ContentRepository.getMovieDetails(simple);
     if (!mounted) return;
 
     Navigator.pop(context); // fecha o carregamento
@@ -380,36 +376,32 @@ Future<void> _openMovie(SimpleMovie simple) async {
           _buildNotificationAction(),
         ],
       ),
-      body: isLoading ? const Center(
-          child: CircularProgressIndicator(),)
-        : RefreshIndicator(
-          onRefresh: _carregarProximaPagina,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
+      body: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  'Lançamentos',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    'Lançamentos',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildCarousel(),
-              const SizedBox(height: 32),
-              _buildSectionTitle('Populares'),
-              const SizedBox(height: 16),
-              _buildHorizontalList(populares),
+                const SizedBox(height: 16),
+                _buildCarousel(),
+                const SizedBox(height: 32),
+                _buildSectionTitle('Populares'),
+                const SizedBox(height: 16),
+                _buildHorizontalList(populares),
               ],
             ),
           ),
-        ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: AppColors.button,
         unselectedItemColor: Colors.grey,

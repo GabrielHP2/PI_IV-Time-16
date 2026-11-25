@@ -1,23 +1,22 @@
 // Feito por Felipe Batista Bastos - 25005337
 // Correções por Luis Felipe Pontes Mita RA - 25018740
 
-class Movie {
-  final int id;
+import 'simple_movie_model.dart';
+
+class Movie extends SimpleMovie {   // precisa do "extends SimpleMovie"
   final String title;
   final String? synopsis;
   final String? release_date;
   final double rating;
   final List<String> genre;
   final List<String>? platform;
-  final List<Movie> similar;
-  final String banner_path;
-  final String poster_path;
-  final String category;
+  final List<SimpleMovie> similar;  // antes: List<Movie>
 
-  Movie ({
-    required this.id,
-    required this.banner_path,
-    required this.poster_path,
+  Movie({
+    required super.id,
+    required super.banner_path,
+    required super.poster_path,
+    required super.category,
     required this.title,
     required this.synopsis,
     required this.release_date,
@@ -25,7 +24,6 @@ class Movie {
     required this.genre,
     required this.platform,
     required this.similar,
-    required this.category,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {

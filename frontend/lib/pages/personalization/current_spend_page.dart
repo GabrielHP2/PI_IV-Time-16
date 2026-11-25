@@ -8,6 +8,7 @@ import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 import '../../theme/app_theme.dart';
 
+// Primeira etapa financeira da personalização: registra quanto o usuário gasta atualmente com streaming.
 class CurrentSpendPage extends StatefulWidget {
   const CurrentSpendPage({super.key});
 
@@ -15,7 +16,9 @@ class CurrentSpendPage extends StatefulWidget {
   State<CurrentSpendPage> createState() => _CurrentSpendPageState();
 }
 
+// Mantém o valor digitado, controla validações e atualiza os elementos da tela.
 class _CurrentSpendPageState extends State<CurrentSpendPage> {
+  // Controller permite ler o valor digitado no campo de gasto mensal.
   final TextEditingController _spendController = TextEditingController();
 
   @override
@@ -47,6 +50,7 @@ class _CurrentSpendPageState extends State<CurrentSpendPage> {
     return double.tryParse(normalizedValue);
   }
 
+  // Valida a entrada, converte o texto para número e salva o valor no repositório antes de avançar.
   void _continue() {
     final spend = _parseSpend(_spendController.text);
 
@@ -155,6 +159,7 @@ class _CurrentSpendPageState extends State<CurrentSpendPage> {
                   ),
                 ),
                 const SizedBox(height: 22),
+                // Botão que confirma o valor informado e continua o fluxo de personalização.
                 PrimaryButton(
                   text: 'Avançar',
                   onPressed: _continue,

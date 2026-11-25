@@ -8,6 +8,7 @@ import '../../repositories/personalization_repository.dart';
 import '../../routes.dart';
 import '../../theme/app_theme.dart';
 
+// Etapa em que o usuário define o limite mensal que gostaria de gastar com streaming.
 class DesiredSpendPage extends StatefulWidget {
   const DesiredSpendPage({super.key});
 
@@ -15,7 +16,9 @@ class DesiredSpendPage extends StatefulWidget {
   State<DesiredSpendPage> createState() => _DesiredSpendPageState();
 }
 
+// Controla a entrada do orçamento desejado e o estado da tela.
 class _DesiredSpendPageState extends State<DesiredSpendPage> {
+  // Permite recuperar e validar o valor digitado pelo usuário.
   final TextEditingController _spendController = TextEditingController();
 
   @override
@@ -43,6 +46,7 @@ class _DesiredSpendPageState extends State<DesiredSpendPage> {
     return double.tryParse(normalizedValue);
   }
 
+  // Verifica se o orçamento é válido, salva a preferência e encaminha o usuário à próxima etapa.
   void _continue() {
     final spend = _parseSpend(_spendController.text);
 

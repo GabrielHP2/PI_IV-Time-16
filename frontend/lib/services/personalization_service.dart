@@ -1,12 +1,16 @@
+// Feito por Felipe Batista Bastos - 25005337
+
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/movie_model.dart';
 import '../models/platform_model.dart';
 import '../models/subscription_plan_model.dart';
 
+// Serviço que concentra as chamadas de personalização às Cloud Functions do Firebase.
 class PersonalizationService {
   PersonalizationService({FirebaseFunctions? functions})
       : _functions = functions ??
+            // Configura a comunicação com as funções publicadas na região southamerica-east1.
             FirebaseFunctions.instanceFor(region: 'southamerica-east1');
 
   final FirebaseFunctions _functions;
@@ -28,6 +32,7 @@ class PersonalizationService {
         return PlatformModel.fromMap(Map<String, dynamic>.from(item));
       }).where((platform) => platform.name.isNotEmpty).toList();
     } on FirebaseFunctionsException catch (error) {
+      // Converte códigos de erro do Firebase em mensagens compreensíveis para a interface.
       throw _translateError(error, 'Não foi possível carregar as plataformas.');
     }
   }
@@ -47,6 +52,7 @@ class PersonalizationService {
         throw Exception('O backend retornou resultados em formato inválido.');
       }
 
+      // Lista de requisições assíncronas que serão aguardadas em conjunto ao final da busca.
       final List<Future<Movie?>> detailRequests = [];
       for (final categoryResult in searchResult.data as List<dynamic>) {
         if (categoryResult is! Map) continue;
@@ -63,10 +69,12 @@ class PersonalizationService {
           if (item is! Map) continue;
           final rawId = item['id'];
           if (rawId is! num || rawId < 1) continue;
+          // Busca os dados completos no backend e transforma a resposta em um objeto Movie.
           detailRequests.add(_getContentDetails(rawId.toInt(), category));
         }
       }
 
+      // Aguarda todas as consultas de detalhes terminarem antes de devolver os resultados.
       final details = await Future.wait(detailRequests);
       return details.whereType<Movie>().toList();
     } on FirebaseFunctionsException catch (error) {
@@ -89,6 +97,7 @@ class PersonalizationService {
       throw Exception('Informe valores de gastos válidos para gerar o planejamento.');
     }
 
+    // Monta o objeto com plataformas, conteúdos atuais/desejados e valores mensais esperados pelo backend.
     final payload = <String, dynamic>{
       'platforms': platformIds,
       'currentContent': currentContents.map(_toSelectedContent).toList(),
@@ -117,6 +126,7 @@ class PersonalizationService {
     }
   }
 
+  // Converte o Movie para o formato compacto {id, category} aceito pela função do backend.
   Map<String, dynamic> _toSelectedContent(Movie movie) {
     final parts = movie.id.split(':');
     final category = parts.length > 1 ? parts.first : movie.category;

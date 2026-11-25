@@ -11,6 +11,7 @@ import '../../routes.dart';
 import '../../services/personalization_service.dart';
 import '../../theme/app_theme.dart';
 
+// Etapa em que o usuário pesquisa e seleciona filmes ou séries que deseja assistir.
 class DesiredContentPage extends StatefulWidget {
   const DesiredContentPage({super.key});
 
@@ -18,6 +19,7 @@ class DesiredContentPage extends StatefulWidget {
   State<DesiredContentPage> createState() => _DesiredContentPageState();
 }
 
+// Controla o texto da pesquisa, resultados encontrados, seleções e estados de carregamento.
 class _DesiredContentPageState extends State<DesiredContentPage> {
   final TextEditingController _searchController = TextEditingController();
   final PersonalizationService _personalizationService =
@@ -36,6 +38,7 @@ class _DesiredContentPageState extends State<DesiredContentPage> {
     super.dispose();
   }
 
+  // Reinicia o temporizador de pesquisa para evitar uma chamada ao backend a cada tecla digitada.
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     final query = value.trim();
@@ -54,6 +57,7 @@ class _DesiredContentPageState extends State<DesiredContentPage> {
     if (query.length < 2) return;
 
     _searchDebounce = Timer(const Duration(milliseconds: 450), () {
+      // Consulta o serviço de personalização e atualiza os resultados apresentados na tela.
       _searchContent(query);
     });
   }
@@ -79,6 +83,7 @@ class _DesiredContentPageState extends State<DesiredContentPage> {
     }
   }
 
+  // Avança para a próxima etapa preservando os conteúdos escolhidos pelo usuário.
   void _continue() {
     Navigator.pushNamed(context, AppRoutes.currentSpend);
   }
@@ -170,6 +175,7 @@ class _DesiredContentPageState extends State<DesiredContentPage> {
             ),
             Expanded(
               child: ValueListenableBuilder<List<Movie>>(
+                // O repositório mantém as escolhas durante o fluxo para que outras etapas possam reutilizá-las.
                 valueListenable: PersonalizationRepository.desiredContents,
                 builder: (context, selectedContents, child) {
                   if (_isLoading) {
@@ -312,6 +318,7 @@ class _DesiredContentCard extends StatelessWidget {
                     movie.imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
+                        // Exibe um elemento alternativo quando o conteúdo não possui pôster ou a imagem falha.
                         _posterFallback(),
                   )
                 else

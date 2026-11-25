@@ -6,9 +6,11 @@ import '../../components/widgets/primary_button.dart';
 import '../../routes.dart';
 import '../../theme/app_theme.dart';
 
+// Tela final do fluxo de personalização, apresentada após as preferências e o planejamento.
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
+  // Remove as telas anteriores da pilha de navegação e direciona o usuário à página inicial.
   void _goToHome(BuildContext context) {
     Navigator.pushNamedAndRemoveUntil(
       context,
@@ -79,6 +81,7 @@ class WelcomePage extends StatelessWidget {
   }
 }
 
+// Ilustração visual simples usada para concluir a experiência de boas-vindas.
 class _WelcomeIllustration extends StatelessWidget {
   const _WelcomeIllustration();
 

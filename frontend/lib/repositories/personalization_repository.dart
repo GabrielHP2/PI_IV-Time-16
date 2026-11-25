@@ -6,6 +6,7 @@ import '../models/movie_model.dart';
 import '../models/platform_model.dart';
 import '../models/subscription_plan_model.dart';
 
+// Repositório local que centraliza as escolhas feitas durante o fluxo de personalização.
 class PersonalizationRepository {
   PersonalizationRepository._();
 
@@ -63,6 +64,7 @@ class PersonalizationRepository {
     return subscribedPlatforms.value.contains(platform);
   }
 
+  // Adiciona uma plataforma à seleção ou remove-a caso ela já esteja selecionada.
   static void togglePlatform(String platform) {
     final currentPlatforms = subscribedPlatforms.value;
 
@@ -79,6 +81,7 @@ class PersonalizationRepository {
     return subscribedPlatformIds.value.contains(platformId);
   }
 
+  // Atualiza simultaneamente o nome e o ID da plataforma para manter os dois formatos sincronizados.
   static void togglePlatformItem(PlatformModel platform) {
     final selectedNames = [...subscribedPlatforms.value];
     final selectedIds = [...subscribedPlatformIds.value];
@@ -109,6 +112,7 @@ class PersonalizationRepository {
     return ongoingContents.value.any((movie) => movie.id == movieId);
   }
 
+  // Alterna a presença de um conteúdo na lista de itens em andamento, usando o ID como chave.
   static void toggleOngoingContent(Movie movie) {
     final currentContents = ongoingContents.value;
 
@@ -125,6 +129,7 @@ class PersonalizationRepository {
     return desiredContents.value.any((movie) => movie.id == movieId);
   }
 
+  // Alterna a presença de um conteúdo na lista de itens desejados.
   static void toggleDesiredContent(Movie movie) {
     final currentContents = desiredContents.value;
 

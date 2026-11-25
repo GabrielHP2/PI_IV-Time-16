@@ -1,3 +1,5 @@
+// Feito por Felipe Batista Bastos - 25005337
+
 import 'package:flutter/material.dart';
 
 import '../../components/widgets/movie_card.dart';

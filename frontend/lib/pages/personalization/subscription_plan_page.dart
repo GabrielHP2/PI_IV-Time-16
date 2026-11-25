@@ -9,6 +9,7 @@ import '../../routes.dart';
 import '../../services/personalization_service.dart';
 import '../../theme/app_theme.dart';
 
+// Tela que solicita ao backend um planejamento de assinaturas com base nas preferências coletadas.
 class SubscriptionPlanPage extends StatefulWidget {
   const SubscriptionPlanPage({super.key});
 
@@ -16,6 +17,7 @@ class SubscriptionPlanPage extends StatefulWidget {
   State<SubscriptionPlanPage> createState() => _SubscriptionPlanPageState();
 }
 
+// Controla a geração do plano, o estado de carregamento, erros e mês atualmente exibido.
 class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
   final PersonalizationService _personalizationService =
       PersonalizationService();
@@ -30,6 +32,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    // Reúne gastos, plataformas e conteúdos selecionados e solicita a geração do planejamento.
     _generatePlan();
   }
 
@@ -61,6 +64,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         throw Exception('O gasto desejado precisa ser maior que zero.');
       }
 
+      // Serviço envia as preferências para a Cloud Function e converte a resposta em SubscriptionPlan.
       final result = await _personalizationService.generateSubscriptionPlan(
         platformIds: PersonalizationRepository.subscribedPlatformIds.value,
         currentContents: PersonalizationRepository.ongoingContents.value,
@@ -89,10 +93,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     }
   }
 
+  // Formata os valores numéricos para exibição no padrão monetário brasileiro.
   String _formatCurrency(double value) {
     return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
   }
 
+  // Atualiza o índice do mês exibido para permitir navegar pelo planejamento.
   void _goToNextMonth() {
     final plan = _plan;
     if (plan == null || plan.months.isEmpty) return;
@@ -114,6 +120,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     );
   }
 
+  // Marca no repositório que o usuário concluiu a visualização/registro do planejamento.
   void _registerPlan() {
     if (_plan == null) return;
     PersonalizationRepository.setPlanRegistered(true);
@@ -132,11 +139,13 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _errorMessage != null
+                // Apresenta uma mensagem de falha e uma ação para tentar gerar o plano novamente.
                 ? _buildErrorState()
                 : _plan == null
                     ? _buildErrorState(
                         message: 'Não foi possível carregar o planejamento.',
                       )
+                    // Organiza os dados gerais e a lista de meses recebidos do backend.
                     : _buildPlan(_plan!),
       ),
     );

@@ -9,6 +9,7 @@ import '../../routes.dart';
 import '../../services/personalization_service.dart';
 import '../../theme/app_theme.dart';
 
+// Etapa que lista as plataformas de streaming e permite selecionar as assinaturas atuais.
 class PlatformsPage extends StatefulWidget {
   const PlatformsPage({super.key});
 
@@ -16,6 +17,7 @@ class PlatformsPage extends StatefulWidget {
   State<PlatformsPage> createState() => _PlatformsPageState();
 }
 
+// Controla o carregamento do catálogo, a seleção das plataformas e mensagens de erro.
 class _PlatformsPageState extends State<PlatformsPage> {
   final PersonalizationService _personalizationService =
       PersonalizationService();
@@ -25,6 +27,7 @@ class _PlatformsPageState extends State<PlatformsPage> {
   @override
   void initState() {
     super.initState();
+    // Busca as plataformas disponíveis no backend e guarda os resultados no repositório.
     _platformsFuture = _loadPlatforms();
   }
 
@@ -34,12 +37,14 @@ class _PlatformsPageState extends State<PlatformsPage> {
     return platforms;
   }
 
+  // Permite repetir a consulta caso o carregamento inicial falhe.
   void _retryLoading() {
     setState(() {
       _platformsFuture = _loadPlatforms();
     });
   }
 
+  // Confirma as plataformas selecionadas e avança para a etapa seguinte.
   void _continue() {
     if (PersonalizationRepository.subscribedPlatformIds.value.isEmpty) {
       ScaffoldMessenger.of(context)
@@ -158,6 +163,7 @@ class _PlatformsPageState extends State<PlatformsPage> {
                               isSelected: isSelected,
                               onTap: () {
                                 PersonalizationRepository
+                                    // Atualiza a seleção mantendo nome e ID da plataforma para as próximas etapas.
                                     .togglePlatformItem(platform);
                               },
                             );

@@ -11,6 +11,7 @@ import '../../routes.dart';
 import '../../services/personalization_service.dart';
 import '../../theme/app_theme.dart';
 
+// Etapa para informar quais filmes e séries o usuário já está acompanhando.
 class OngoingContentPage extends StatefulWidget {
   const OngoingContentPage({super.key});
 
@@ -18,6 +19,7 @@ class OngoingContentPage extends StatefulWidget {
   State<OngoingContentPage> createState() => _OngoingContentPageState();
 }
 
+// Gerencia pesquisa, resultados e seleção dos conteúdos em andamento.
 class _OngoingContentPageState extends State<OngoingContentPage> {
   final TextEditingController _searchController = TextEditingController();
   final PersonalizationService _personalizationService = PersonalizationService();
@@ -35,6 +37,7 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
     super.dispose();
   }
 
+  // Aguarda uma pausa na digitação antes de realizar outra pesquisa.
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     final query = value.trim();
@@ -51,6 +54,7 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
 
     if (query.length < 2) return;
     _searchDebounce = Timer(const Duration(milliseconds: 450), () {
+      // Busca conteúdos no serviço e atualiza a lista de resultados da tela.
       _searchContent(query);
     });
   }
@@ -74,6 +78,7 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
     }
   }
 
+  // Finaliza a seleção de conteúdos em andamento e avança no fluxo.
   void _continue() {
     Navigator.pushNamed(context, AppRoutes.desiredContent);
   }
@@ -148,6 +153,7 @@ class _OngoingContentPageState extends State<OngoingContentPage> {
             ),
             Expanded(
               child: ValueListenableBuilder<List<Movie>>(
+                // Consulta e altera a seleção persistida temporariamente durante o fluxo de personalização.
                 valueListenable: PersonalizationRepository.ongoingContents,
                 builder: (context, selectedContents, child) {
                   if (_isLoading) {
@@ -271,6 +277,7 @@ class _OngoingContentCard extends StatelessWidget {
                   Image.network(
                     movie.imageUrl,
                     fit: BoxFit.cover,
+                    // Apresenta um espaço alternativo caso a imagem do pôster não esteja disponível.
                     errorBuilder: (context, error, stackTrace) => _posterFallback(),
                   )
                 else

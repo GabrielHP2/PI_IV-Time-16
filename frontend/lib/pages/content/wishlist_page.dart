@@ -8,6 +8,7 @@ import '../../models/movie_model.dart';
 import '../../components/widgets/wishlist_card.dart';
 import '../../repositories/wishlist_repository.dart';
 
+// Tela responsável por exibir os filmes e séries que o usuário adicionou à Wishlist.
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
 
@@ -15,6 +16,7 @@ class WishlistPage extends StatefulWidget {
   State<WishlistPage> createState() => _WishlistPageState();
 }
 
+// Estado da tela: controla o carregamento da lista, mensagens de erro e atualização da interface.
 class _WishlistPageState extends State<WishlistPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -22,13 +24,16 @@ class _WishlistPageState extends State<WishlistPage> {
   String? _errorMessage;
 
   @override
+  // Ao abrir a tela, inicia a consulta da Wishlist para apresentar os dados mais recentes.
   void initState() {
     super.initState();
+    // Consulta o repositório. O parâmetro refresh permite forçar uma nova leitura do servidor.
     _loadWishlist();
   }
 
   Future<void> _loadWishlist({bool refresh = false}) async {
     if (mounted) {
+      // Atualiza o estado visual depois que o carregamento termina, inclusive quando ocorre uma falha.
       setState(() {
         _isLoading = true;
         _errorMessage = null;
@@ -55,6 +60,7 @@ class _WishlistPageState extends State<WishlistPage> {
   }
 
   void _openContent(Movie movie) {
+    // Abre a tela de detalhes do conteúdo selecionado, encaminhando o objeto necessário.
     Navigator.pushNamed(
       context,
       AppRoutes.detailedView,
@@ -180,6 +186,7 @@ class _WishlistPageState extends State<WishlistPage> {
                               );
                             }
 
+                            // Constrói os cards sob demanda, evitando criar todos os elementos da grade de uma só vez.
                             return GridView.builder(
                               padding:
                                   const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -193,6 +200,7 @@ class _WishlistPageState extends State<WishlistPage> {
                               ),
                               itemBuilder: (context, index) {
                                 final movie = filteredMovies[index];
+                                // Cada item da lista é apresentado por um card reutilizável com os dados do conteúdo.
                                 return WishlistCard(
                                   movie: movie,
                                   onTap: () => _openContent(movie),

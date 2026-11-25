@@ -1,3 +1,6 @@
+// Feito por Felipe Batista Bastos - 25005337
+
+
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/movie_model.dart';
@@ -6,10 +9,12 @@ import '../models/movie_model.dart';
 class WishlistService {
   WishlistService({FirebaseFunctions? functions})
       : _functions = functions ??
+            // Usa a instância de Cloud Functions configurada para a região do projeto.
             FirebaseFunctions.instanceFor(region: 'southamerica-east1');
 
   final FirebaseFunctions _functions;
 
+  // Envia o ID numérico e a categoria do conteúdo para a função de inclusão no MongoDB.
   Future<void> addToWishlist(Movie movie) async {
     final identity = _getIdentity(movie);
     await _call(
@@ -21,6 +26,7 @@ class WishlistService {
     );
   }
 
+  // Envia os mesmos identificadores usados na inclusão para remover o registro correto.
   Future<void> removeFromWishlist(Movie movie) async {
     final identity = _getIdentity(movie);
     await _call(
@@ -32,6 +38,7 @@ class WishlistService {
     );
   }
 
+  // Recupera os identificadores salvos e prepara os dados para serem exibidos como objetos Movie.
   Future<List<Movie>> getWishlist() async {
     final response = await _call('getWishlist', <String, dynamic>{});
     if (response is! Map) {
@@ -57,6 +64,7 @@ class WishlistService {
     }
 
     final results = await Future.wait(
+      // Consulta os detalhes do catálogo para reconstruir as informações completas de cada item salvo.
       entries.map((entry) => _getContentDetails(entry.id, entry.category)),
     );
     return results.whereType<Movie>().toList();
@@ -67,6 +75,7 @@ class WishlistService {
     Map<String, dynamic> payload,
   ) async {
     try {
+      // Cada chamada usa o nome publicado pelo backend e envia os dados esperados pela função.
       final result = await _functions.httpsCallable(functionName).call(payload);
       return result.data;
     } on FirebaseFunctionsException catch (error) {
